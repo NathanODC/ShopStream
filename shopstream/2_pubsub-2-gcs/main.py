@@ -5,16 +5,34 @@ from google.cloud import pubsub_v1
 from google.cloud import storage
 
 os.environ["PUBSUB_EMULATOR_HOST"] = "localhost:8134"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/nathanodc/Projects/Personal/ShopStream/shopstream-proj-b2c90a6ef5a1.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
+    "/home/nathanodc/Projects/Personal/ShopStream/shopstream-proj-b2c90a6ef5a1.json"
+)
 
 logging.basicConfig(level=logging.INFO)
 
 
 TOPIC_BUCKET_MAP = {
-    "projects/local-pubsub-instance/topics/clickstream-topic": ["shopstream-bronze-events", "clickstream", "json"],
-    "projects/local-pubsub-instance/topics/customer-support-topic": ["shopstream-bronze-support", "customer-support", "json"],
-    "projects/local-pubsub-instance/topics/product-catalog": ["shopstream-bronze-products", "product-catalog", "json"],
-    "projects/local-pubsub-instance/topics/sales-transactions": ["shopstream-bronze-sales", "sales-transactions", "csv"],
+    "projects/local-pubsub-instance/topics/clickstream-topic": [
+        "shopstream-bronze-events",
+        "clickstream",
+        "json",
+    ],
+    "projects/local-pubsub-instance/topics/customer-support-topic": [
+        "shopstream-bronze-support",
+        "customer-support",
+        "json",
+    ],
+    "projects/local-pubsub-instance/topics/product-catalog": [
+        "shopstream-bronze-products",
+        "product-catalog",
+        "json",
+    ],
+    "projects/local-pubsub-instance/topics/sales-transactions": [
+        "shopstream-bronze-sales",
+        "sales-transactions",
+        "csv",
+    ],
 }
 
 GCS_PREFIX = "pubsub-data"
@@ -39,6 +57,7 @@ def callback_factory(topic, data_params):
         blob_name = f"{GCS_PREFIX}/{topic.split('/')[-1]}/dt={message.publish_time.strftime('%Y-%m-%d')}/{file_name}_{message.publish_time.strftime('%Y-%m-%d_%H-%M-%S')}.{file_extension}"
         upload_to_gcs(bucket_name, blob_name, message.data)
         message.ack()
+
     return callback
 
 
@@ -70,6 +89,7 @@ def main():
     finally:
         for future in streaming_pull_futures:
             future.cancel()
+
 
 if __name__ == "__main__":
     main()
