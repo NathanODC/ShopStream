@@ -206,3 +206,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ignoring sample source files
+shopstream/1_api_sources/source-data/*
