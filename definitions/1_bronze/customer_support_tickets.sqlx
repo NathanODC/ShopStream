@@ -1,0 +1,6 @@
+config {
+    type: "declaration",
+    database: "shopstream-proj",
+    schema: "shopstream_bronze",
+    name: "customer_support_tickets"
+}
