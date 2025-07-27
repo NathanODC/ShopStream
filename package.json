@@ -1,0 +1,6 @@
+{
+    "name": "shopstream_dev",
+    "dependencies": {
+      "@dataform/core": "2.4.2"
+    }
+}
