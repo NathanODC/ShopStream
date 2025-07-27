@@ -1,0 +1,20 @@
+[project]
+name = "shopstream"
+version = "0.1.0"
+description = "Code from a retail comp called ShopStream"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "apache-beam>=2.66.0",
+    "flask>=3.1.1",
+    "functions-framework>=3.9.1",
+    "google-cloud-pubsub>=2.31.0",
+    "google-cloud-storage>=3.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "isort>=6.0.1",
+    "pre-commit>=4.2.0",
+    "ruff>=0.12.5",
+]
