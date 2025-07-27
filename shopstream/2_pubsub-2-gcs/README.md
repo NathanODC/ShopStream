@@ -1,0 +1,1 @@
+## This folder script is only in the local dev environment seeing that we cand send automatically the data received from pubsub to GCS bucket
