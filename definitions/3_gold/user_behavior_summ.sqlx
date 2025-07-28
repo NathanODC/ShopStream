@@ -1,0 +1,48 @@
+config {
+  type: "table",
+  schema: "shopstream_gold",
+  name: "user_behavior_summary",
+  tags: ["gold", "user_behavior"]
+}
+
+
+WITH user_purchase_patterns AS (
+  SELECT
+    user_id,
+    COUNT(DISTINCT transaction_id) AS total_orders,
+    SUM(total_amount) AS total_lifetime_spend,
+    AVG(total_amount) AS average_order_value,
+    MAX(transaction_timestamp) AS last_purchase_date,
+    COUNT(DISTINCT product_id) AS distinct_products_purchased
+  FROM
+    ${ref("f_sales")}
+  GROUP BY
+    user_id
+),
+
+
+user_browsing_history AS (
+  SELECT
+    user_id,
+    ARRAY_AGG(DISTINCT properties.category IGNORE NULLS) as browsed_categories
+  FROM
+    ${ref("clickstream_events")}
+  WHERE event_type = 'page_view'
+  GROUP BY
+    user_id
+)
+
+SELECT
+  p.user_id,
+  c.billing_country,
+  p.total_orders,
+  p.total_lifetime_spend,
+  p.average_order_value,
+  p.last_purchase_date,
+  p.distinct_products_purchased,
+  b.browsed_categories
+FROM user_purchase_patterns p
+JOIN ${ref("d_customers")} c
+  ON p.user_id = c.user_id AND c.valid_to IS NULL
+LEFT JOIN user_browsing_history b ON p.user_id = b.user_id
+
