@@ -2,7 +2,6 @@ from flask import jsonify
 import functions_framework
 import logging
 from google.cloud import pubsub_v1
-import os
 
 from .utils import (
     setup_log_execution,
@@ -13,11 +12,9 @@ from .utils import (
 
 LOG_LEVELS = {"dev": logging.DEBUG, "stg": logging.INFO, "prd": logging.WARNING}
 
-os.environ["PUBSUB_EMULATOR_HOST"] = "localhost:8134"
-
 
 @functions_framework.http
-def hello_http(request):
+def main(request):
     """
     HTTP Cloud Function that generates the data simulating the sources.
     """
