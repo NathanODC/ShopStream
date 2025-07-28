@@ -1,0 +1,44 @@
+config {
+  type: "table",
+  tags: ["silver"],
+  assertions: {
+    uniqueKey: ["product_id"],
+    nonNull: ["product_id"]
+  }
+}
+
+WITH
+  latest_partition_date AS (
+      SELECT
+          dt
+      FROM ${ref('product_catalog')}
+      ORDER BY
+          dt DESC
+      LIMIT 1 
+  ),
+
+
+  t_schema_apply AS (
+    SELECT
+      product_id,
+      name,
+      category,
+      CAST(price AS FLOAT64) AS price,
+      CAST(cost AS FLOAT64) AS cost,
+      CAST(stock_quantity AS INT64) AS stock_quantity,
+      supplier_id,
+      attributes,
+      last_updated,
+      tags
+    FROM
+      ${ref("product_catalog")}
+    WHERE dt = (SELECT dt FROM latest_partition_date)
+  ),
+
+
+  final_table AS (
+    SELECT * FROM t_schema_apply
+  )
+
+
+SELECT * FROM final_table

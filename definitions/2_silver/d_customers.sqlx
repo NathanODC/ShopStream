@@ -1,0 +1,95 @@
+config {
+  type: "incremental",
+  uniqueKey: ["user_id", "row_hash"],
+  bigquery: {
+    partitionBy: "DATE(valid_from)",
+    clusterBy: ["billing_country"]
+  },
+  tags: ["silver", "customer"],
+  assertions: {
+    uniqueKey: ["user_id", "row_hash"]
+  }
+}
+
+WITH 
+
+  -- source_data_for_test AS (
+  --   SELECT
+  --     'usr_abc123' AS user_id,
+  --     'US' AS billing_country,
+  --     '456 Oak Ave, Newville, USA' AS shipping_address,
+  --     TIMESTAMP('2025-07-27 11:30:00') AS `timestamp`,
+  --     DATE('2025-07-27') AS dt
+  --   UNION ALL
+  --   SELECT
+  --     'usr_srg567' AS user_id,
+  --     'BR' AS billing_country,
+  --     '430 Ferreira Pontes, rj, BRA' AS shipping_address,
+  --     TIMESTAMP('2025-07-27 11:57:00') as `timestamp`,
+  --     DATE('2025-07-27') AS dt
+  -- ),
+
+
+  latest_partition_date AS (
+        SELECT
+            MAX(dt)
+        FROM ${ref('sales_transactions')}
+  ),
+
+
+  customer_snapshots AS (
+    SELECT
+      CAST(user_id AS STRING) AS user_id,
+      CAST(billing_country AS STRING) AS billing_country,
+      TIMESTAMP(`timestamp`) AS valid_from,
+      CAST(NULL AS TIMESTAMP) AS valid_to,
+      MD5(TRIM(shipping_address)) AS address_hash,
+      SHA256(
+        ARRAY_TO_STRING(
+          [
+            user_id, 
+            billing_country, 
+            shipping_address
+          ],
+          "|"
+          )
+       ) AS row_hash
+    FROM (
+        SELECT
+          *,
+          ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY `timestamp`) AS rownum
+        FROM ${ref("sales_transactions")}
+      )
+    WHERE 
+      user_id IS NOT NULL AND 
+      shipping_address IS NOT NULL AND
+      rownum = 1 AND
+      dt = (SELECT dt FROM latest_partition_date)
+  )
+
+
+SELECT -- update for older customer registries 
+  s.user_id,
+  t.billing_country,
+  t.address_hash,
+  t.row_hash,
+  t.valid_from,
+  TIMESTAMP(s.valid_from) AS valid_to
+FROM customer_snapshots s
+INNER JOIN ${self()} t
+  ON s.user_id = t.user_id
+WHERE
+  s.row_hash != t.row_hash
+UNION ALL
+SELECT -- new customer registries
+  s.user_id,
+  s.billing_country,
+  s.address_hash,
+  s.row_hash,
+  s.valid_from,
+  s.valid_to,
+FROM customer_snapshots s
+LEFT JOIN ${self()} t
+  ON s.user_id = t.user_id
+
+

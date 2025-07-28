@@ -1,5 +1,5 @@
 {
-    "name": "dev_dataform_pedidos",
+    "name": "shopstream_dev",
     "dependencies": {
       "@dataform/core": "2.4.2"
     }
