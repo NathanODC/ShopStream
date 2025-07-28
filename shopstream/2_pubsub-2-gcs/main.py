@@ -9,7 +9,11 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
     "/home/nathanodc/Projects/Personal/ShopStream/shopstream-proj-b2c90a6ef5a1.json"
 )
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(module)s.%(funcName)s]: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 
 TOPIC_BUCKET_MAP = {
@@ -40,11 +44,15 @@ TIMEOUT = 100.0
 
 
 def upload_to_gcs(bucket_name, blob_name, data):
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(blob_name)
-    blob.upload_from_string(data)
-    logging.info(f"Uploaded to gs://{bucket_name}/{blob_name}")
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        blob.upload_from_string(data)
+        logging.info(f"Uploaded to gs://{bucket_name}/{blob_name}")
+    except Exception as e:
+        logging.error(f"Failed to upload to gs://{bucket_name}/{blob_name}: {e}")
+        raise
 
 
 def callback_factory(topic, data_params):
@@ -53,10 +61,15 @@ def callback_factory(topic, data_params):
         file_name = data_params[1]
         file_extension = data_params[2]
 
-        logging.info(f"Received message on {topic}: {message.message_id}")
+        logging.info(f"[Callback] Received message on {topic}: {message.message_id}")
         blob_name = f"{GCS_PREFIX}/{topic.split('/')[-1]}/dt={message.publish_time.strftime('%Y-%m-%d')}/{file_name}_{message.publish_time.strftime('%Y-%m-%d_%H-%M-%S')}.{file_extension}"
-        upload_to_gcs(bucket_name, blob_name, message.data)
-        message.ack()
+        logging.debug(f"[Callback] Constructed blob name: {blob_name}")
+        try:
+            upload_to_gcs(bucket_name, blob_name, message.data)
+            message.ack()
+            logging.info(f"[Callback] Message {message.message_id} processed and acknowledged.")
+        except Exception as e:
+            logging.error(f"[Callback] Error processing message {message.message_id}: {e}")
 
     return callback
 
@@ -65,6 +78,7 @@ def main():
     subscriber = pubsub_v1.SubscriberClient()
     streaming_pull_futures = []
 
+    logging.info("Starting Pub/Sub to GCS pipeline...")
     for topic, data_params in TOPIC_BUCKET_MAP.items():
         subscription_path = topic.replace("topics", "subscriptions") + "-sub"
         try:
@@ -81,14 +95,18 @@ def main():
 
     try:
         for future in streaming_pull_futures:
+            logging.debug(f"Waiting for messages with timeout={TIMEOUT}s...")
             future.result(timeout=TIMEOUT)
     except TimeoutError:
-        logging.info("Stopped listening after timeout.")
+        logging.warning("Stopped listening after timeout.")
     except KeyboardInterrupt:
-        logging.info("Interrupted by user.")
+        logging.warning("Interrupted by user.")
+    except Exception as e:
+        logging.error(f"Unexpected error in main loop: {e}")
     finally:
         for future in streaming_pull_futures:
             future.cancel()
+        logging.info("All streaming pulls cancelled. Exiting.")
 
 
 if __name__ == "__main__":
