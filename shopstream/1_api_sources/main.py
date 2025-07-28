@@ -2,7 +2,6 @@ from flask import jsonify
 import functions_framework
 import logging
 from google.cloud import pubsub_v1
-import os
 
 from .utils import (
     setup_log_execution,
@@ -13,11 +12,9 @@ from .utils import (
 
 LOG_LEVELS = {"dev": logging.DEBUG, "stg": logging.INFO, "prd": logging.WARNING}
 
-os.environ["PUBSUB_EMULATOR_HOST"] = "localhost:8134"
-
 
 @functions_framework.http
-def hello_http(request):
+def main(request):
     """
     HTTP Cloud Function that generates the data simulating the sources.
     """
@@ -34,11 +31,27 @@ def hello_http(request):
 
     setup_log_execution(log_env, LOG_LEVELS)
 
+    # Environment-specific logging
+    if log_env == "dev":
+        logging.debug("[DEV] Starting data ingestion simulation in development mode.")
+    elif log_env == "stg":
+        logging.info("[STAGING] Starting data ingestion simulation in staging mode.")
+    elif log_env == "prd":
+        logging.warning(
+            "[PRODUCTION] Starting data ingestion simulation in production mode."
+        )
+    else:
+        logging.info(
+            f"[UNKNOWN ENV] Starting data ingestion simulation in environment: {log_env}"
+        )
+
     try:
         clickstream_data = read_local_file("clickstream_events.json")
         customer_support_data = read_local_file("customer_support.json")
         product_catalog_data = read_local_file("product_catalog.json")
         sales_transactions_data = read_local_file("transactions.csv")
+
+        logging.info(f"Loaded source data files for environment: {log_env}")
 
         data_topic_map = [
             {
@@ -64,6 +77,8 @@ def hello_http(request):
         ]
 
         publisher = pubsub_v1.PublisherClient()
+
+        logging.info(f"Publishing to PubSub topics: {pubsub_topics}")
 
         for item in data_topic_map:
             get_or_create_pubsub_topic(publisher, item["topic"])

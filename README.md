@@ -80,9 +80,11 @@ Run pubsub emulator by running `make run_pubsub_emulator`.
 
 Run gcf source by running `make run_gcf_source`.
 
+Run gcf pubsub to gcs by running `make run_gcf_pubsub_to_gcs`.
+
 Run source request by running `make source_request`.
 
-Run pubsub to gcs by running `make run_pubsub_to_gcs`.
+Run pubsub to gcs request by running `make pubsub_to_gcs_request`.
 
 
 #### Dev Test
