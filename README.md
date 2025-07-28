@@ -8,6 +8,8 @@
 
 ```
 ShopStream/
+├── .github/                  # GitHub workflows (In development)
+├── airflow/                  # Airflow project (In development)
 ├── content/                  # Documentation, diagrams, and reference files
 │   ├── ShopStream-Architecture.png
 │   ├── ShopStream_Architecture.drawio
