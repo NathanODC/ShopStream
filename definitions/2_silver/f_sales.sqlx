@@ -1,0 +1,42 @@
+config {
+  type: "table",
+  tags: ["silver"],
+  assertions: {
+    nonNull: ["transaction_id", "user_id", "product_id", "transaction_timestamp"]
+  }
+}
+
+
+-- Step 1: Flatten the JSON items array into individual rows
+WITH flattened_transactions AS (
+  SELECT
+    t.transaction_id,
+    t.user_id,
+    t.`timestamp` AS transaction_timestamp,
+    t.status AS transaction_status,
+    JSON_EXTRACT_SCALAR(CAST(it AS STRING), '$.product_id') AS product_id,
+    JSON_EXTRACT_SCALAR(CAST(it AS STRING), '$.quantity') AS quantity,
+    JSON_EXTRACT_SCALAR(CAST(it AS STRING), '$.price') AS price
+  FROM
+    -- Added alias 't' for clarity
+    ${ref('sales_transactions')} t,
+    UNNEST(
+      JSON_EXTRACT_ARRAY(t.items)
+    ) AS it -- <-- The semicolon was removed from here
+  WHERE
+    t.user_id IS NOT NULL AND t.status = 'completed'
+)
+-- Step 2: Select final fields for the fact table
+SELECT
+  f.transaction_id,
+  f.user_id,
+  p.product_id,
+  f.transaction_timestamp,
+  CAST(f.quantity AS INT64) as quantity,
+  CAST(f.price AS FLOAT64) as price,
+  -- Perform calculation after casting to the correct numeric types
+  (CAST(f.quantity AS INT64) * CAST(f.price AS FLOAT64)) AS total_amount
+FROM
+  flattened_transactions f
+  -- Join with the product dimension to ensure data integrity
+  JOIN ${ref("d_products")} p ON f.product_id = p.product_id
