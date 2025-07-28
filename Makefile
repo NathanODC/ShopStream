@@ -1,3 +1,7 @@
+setup:
+	cd shopstream && uv sync
+	.venv/bin/activate
+
 run_tests:
 	pytest
 
@@ -13,7 +17,7 @@ stop_airflow_emulator:
 run_gcf_source:
 	cd shopstream/1_api_sources && functions-framework --target=hello_http --port=8080 --debug
 
-run_source_request:
+source_request:
 	curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d '{ "log_env": "dev", "source_bucket_name": "shopstream-source-data-files", "pubsub_topics": { "clickstream": "projects/local-pubsub-instance/topics/clickstream-topic", "customer_support": "projects/local-pubsub-instance/topics/customer-support-topic", "product_catalog": "projects/local-pubsub-instance/topics/product-catalog", "sales_transactions": "projects/local-pubsub-instance/topics/sales-transactions"}}'
 
 run_pubsub_to_gcs:
