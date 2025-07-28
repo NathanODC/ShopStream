@@ -10,7 +10,7 @@ from utils import setup_log_execution
 LOG_LEVELS = {"dev": logging.DEBUG, "stg": logging.INFO, "prd": logging.WARNING}
 
 
-TOPIC_BUCKET_MAP = { # TODO: move to a yaml file / env variable / pass as parameter
+TOPIC_BUCKET_MAP = {  # TODO: move to a yaml file / env variable / pass as parameter
     "projects/shopstream-proj/topics/clickstream-topic": [
         "shopstream-bronze-events",
         "clickstream",
@@ -34,21 +34,17 @@ TOPIC_BUCKET_MAP = { # TODO: move to a yaml file / env variable / pass as parame
 }
 
 
-
 @functions_framework.http
 def main(request):
-
     request_json = request.get_json(silent=True)
 
     log_env = request_json.get("log_env", "dev")
     gcs_prefix = request_json.get("gcs_prefix", "pubsub-data")
     timeout = request_json.get("timeout", 100.0)
 
-
     assert log_env, "log_env is required"
     assert gcs_prefix, "gcs_prefix is required"
     assert timeout, "timeout is required"
-
 
     setup_log_execution(log_env, LOG_LEVELS)
 
@@ -84,5 +80,3 @@ def main(request):
         for future in streaming_pull_futures:
             future.cancel()
         logging.info("All streaming pulls cancelled. Exiting.")
-
-

@@ -2,6 +2,7 @@ import logging
 
 from utils import upload_to_gcs
 
+
 def callback_factory(topic, data_params, gcs_prefix):
     def callback(message):
         bucket_name = data_params[0]
