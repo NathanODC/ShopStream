@@ -1,0 +1,56 @@
+name: Build and Deploy to GCF Gen Data Sources
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "shopstream/2_pubsub_2_gcs/**"
+
+env:
+  FUNCTION_NAME: # TODO: Define
+  SOURCE_DIR: # TODO: Define
+  REGION: # TODO: Define
+  PYTHON_VERSION: # TODO: Define
+  ENTRY_POINT: # TODO: Define
+  SERVICE_ACCOUNT: # TODO: Define
+
+jobs:
+  setup-build-publish-deploy:
+    name: Setup, Build, Publish, and Deploy
+    runs-on: ubuntu-latest 
+    environment: Production
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v0'
+      with:
+        credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+    - name: vm configuration
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }} # TODO: Setup credentials on GH secrets
+      run: |-
+        gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
+    
+    - name: update gcf pubsub to gcs
+      run: |-
+        set -e
+        echo "Deploying Function: ${{ env.FUNCTION_NAME }}"
+        gcloud run deploy ${{ env.FUNCTION_NAME }} \
+          --no-allow-unauthenticated \
+          --region ${{ env.REGION }} \
+          --base-image ${{ env.PYTHON_VERSION }} \
+          --function ${{ env.ENTRY_POINT }} \
+          --source $(Build.SourcesDirectory)/${{ env.SOURCE_DIR }} \
+          --service-account=${{ env.SERVICE_ACCOUNT }}
+
+
+
+    
