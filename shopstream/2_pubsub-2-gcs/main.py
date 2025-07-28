@@ -12,7 +12,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s [%(module)s.%(funcName)s]: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
 
@@ -67,9 +67,13 @@ def callback_factory(topic, data_params):
         try:
             upload_to_gcs(bucket_name, blob_name, message.data)
             message.ack()
-            logging.info(f"[Callback] Message {message.message_id} processed and acknowledged.")
+            logging.info(
+                f"[Callback] Message {message.message_id} processed and acknowledged."
+            )
         except Exception as e:
-            logging.error(f"[Callback] Error processing message {message.message_id}: {e}")
+            logging.error(
+                f"[Callback] Error processing message {message.message_id}: {e}"
+            )
 
     return callback
 

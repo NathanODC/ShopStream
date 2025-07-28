@@ -40,9 +40,13 @@ def hello_http(request):
     elif log_env == "stg":
         logging.info("[STAGING] Starting data ingestion simulation in staging mode.")
     elif log_env == "prd":
-        logging.warning("[PRODUCTION] Starting data ingestion simulation in production mode.")
+        logging.warning(
+            "[PRODUCTION] Starting data ingestion simulation in production mode."
+        )
     else:
-        logging.info(f"[UNKNOWN ENV] Starting data ingestion simulation in environment: {log_env}")
+        logging.info(
+            f"[UNKNOWN ENV] Starting data ingestion simulation in environment: {log_env}"
+        )
 
     try:
         clickstream_data = read_local_file("clickstream_events.json")
