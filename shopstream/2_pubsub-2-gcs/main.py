@@ -2,6 +2,7 @@ import functions_framework
 import logging
 from concurrent.futures import TimeoutError
 from google.cloud import pubsub_v1
+from flask import jsonify
 
 from main_helper import callback_factory
 from utils import setup_log_execution
@@ -72,10 +73,13 @@ def main(request):
             future.result(timeout=timeout)
     except TimeoutError:
         logging.warning("Stopped listening after timeout.")
+        return jsonify({"message": "Stopped listening after timeout."}), 200
     except KeyboardInterrupt:
         logging.warning("Interrupted by user.")
+        return jsonify({"message": "Interrupted by user."}), 200
     except Exception as e:
         logging.error(f"Unexpected error in main loop: {e}")
+        return jsonify({"message": "Unexpected error in main loop: {e}"}), 500
     finally:
         for future in streaming_pull_futures:
             future.cancel()
