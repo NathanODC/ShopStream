@@ -211,7 +211,9 @@ __marimo__/
 shopstream/1_api_sources/source-data/*
 
 # gcp service account
-shopstream-proj-b2c90a6ef5a1.json
+airflow/application_default_credentials.json
 
 # pubsub emulator logs
 pubsub_log/*
+
+
