@@ -21,7 +21,7 @@ def get_or_create_pubsub_topic(publisher, topic_path):
 
 
 def read_local_file(path):
-    file_path = os.path.join("source-data", path)
+    file_path = os.path.join("/", "source-data", path)
     try:
         with open(file_path, "rb") as f:
             data = f.read()
