@@ -3,7 +3,7 @@ import functions_framework
 import logging
 from google.cloud import pubsub_v1
 
-from .utils import (
+from utils import (
     setup_log_execution,
     get_or_create_pubsub_topic,
     read_local_file,
