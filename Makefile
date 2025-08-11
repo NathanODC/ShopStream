@@ -11,10 +11,10 @@ run_pubsub_emulator:
 	gcloud beta emulators pubsub start --project=$(PUBSUB_PROJECT_ID) --data-dir=$(PUBSUB_DATA_DIR)
 
 run_gcf_source:
-	cd shopstream/gcf/1_api_sources && functions-framework --target=main --port=8080 --debug
+	cd shopstream/gcf/api_sources && functions-framework --target=main --port=8080 --debug
 
 run_gcf_pubsub_to_gcs:
-	cd shopstream/gcf/2_pubsub-2-gcs && functions-framework --target=main --port=8080 --debug
+	cd shopstream/gcf/pubsub-2-gcs && functions-framework --target=main --port=8080 --debug
 
 source_request:
 	curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d '{ "log_env": "dev", "source_bucket_name": "shopstream-source-data-files", "pubsub_topics": { "clickstream": "projects/$(PUBSUB_PROJECT_ID)/topics/clickstream-topic", "customer_support": "projects/$(PUBSUB_PROJECT_ID)/topics/customer-support-topic", "product_catalog": "projects/$(PUBSUB_PROJECT_ID)/topics/product-catalog", "sales_transactions": "projects/$(PUBSUB_PROJECT_ID)/topics/sales-transactions"}}'
