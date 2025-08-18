@@ -12,8 +12,7 @@ ShopStream/
 ├── airflow/                  # Airflow project (In development)
 ├── content/                  # Documentation, diagrams, and reference files
 │   ├── ShopStream-Architecture.png
-│   ├── ShopStream_Architecture.drawio
-│   └── Take Home Assessment.pdf
+│   └── ShopStream_Architecture.drawio
 ├── definitions/              # Dataform definitions and quality checks
 │   ├── 1_bronze/
 │   ├── 2_silver/
