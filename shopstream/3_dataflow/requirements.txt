@@ -1,0 +1,8 @@
+# Dataflow worker requirements.
+# Installed on both local dev and Dataflow worker VMs.
+#
+# apache-beam[gcp] bundles:
+#   - DirectRunner and DataflowRunner
+#   - google-cloud-pubsub, google-cloud-bigquery, google-cloud-storage
+#   - Python 3.13 support requires >= 2.61.0
+apache-beam[gcp]>=2.61.0
