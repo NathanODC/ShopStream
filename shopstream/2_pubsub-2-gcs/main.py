@@ -1,6 +1,9 @@
 import functions_framework
+import json
 import logging
+import os
 from concurrent.futures import TimeoutError
+from google.api_core.exceptions import NotFound
 from google.cloud import pubsub_v1
 
 from main_helper import callback_factory
@@ -10,28 +13,14 @@ from utils import setup_log_execution
 LOG_LEVELS = {"dev": logging.DEBUG, "stg": logging.INFO, "prd": logging.WARNING}
 
 
-TOPIC_BUCKET_MAP = {  # TODO: move to a yaml file / env variable / pass as parameter
-    "projects/shopstream-proj/topics/clickstream-topic": [
-        "shopstream-bronze-events",
-        "clickstream",
-        "json",
-    ],
-    "projects/shopstream-proj/topics/customer-support-topic": [
-        "shopstream-bronze-support",
-        "customer-support",
-        "json",
-    ],
-    "projects/shopstream-proj/topics/product-catalog": [
-        "shopstream-bronze-products",
-        "product-catalog",
-        "json",
-    ],
-    "projects/shopstream-proj/topics/sales-transactions": [
-        "shopstream-bronze-sales",
-        "sales-transactions",
-        "csv",
-    ],
-}
+def load_topic_bucket_map():
+    config_file = os.environ.get("CONFIG_PATH", "config.json")
+    config_path = os.path.join(os.path.dirname(__file__), config_file)
+    with open(config_path) as f:
+        return json.load(f)["topic_bucket_map"]
+
+
+TOPIC_BUCKET_MAP = load_topic_bucket_map()
 
 
 @functions_framework.http
@@ -57,7 +46,7 @@ def main(request):
         try:
             subscriber.get_subscription(request={"subscription": subscription_path})
             logging.info(f"Subscription {subscription_path} already exists.")
-        except Exception:
+        except NotFound:
             subscriber.create_subscription(name=subscription_path, topic=topic)
             logging.info(f"Created subscription {subscription_path} for topic {topic}.")
 

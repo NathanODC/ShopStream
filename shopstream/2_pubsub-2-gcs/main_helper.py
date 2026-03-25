@@ -1,5 +1,7 @@
 import logging
 
+from google.cloud.exceptions import GoogleCloudError
+
 from utils import upload_to_gcs
 
 
@@ -18,9 +20,10 @@ def callback_factory(topic, data_params, gcs_prefix):
             logging.info(
                 f"[Callback] Message {message.message_id} processed and acknowledged."
             )
-        except Exception as e:
+        except GoogleCloudError as e:
             logging.error(
                 f"[Callback] Error processing message {message.message_id}: {e}"
             )
+            message.nack()
 
     return callback
