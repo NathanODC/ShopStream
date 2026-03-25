@@ -1,0 +1,117 @@
+name: Dataflow — Test and Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "shopstream/3_dataflow/**"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "shopstream/3_dataflow/**"
+
+env:
+  PYTHON_VERSION: "3.13"
+  SOURCE_DIR: shopstream/3_dataflow
+  GCP_PROJECT: shopstream-proj
+  REGION: us-west1
+  DATAFLOW_BUCKET: shopstream-dataflow-temp
+  BQ_DATASET: shopstream_streaming
+  SERVICE_ACCOUNT: ${{ secrets.GCF_SERVICE_ACCOUNT }}
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # Job 1: Run tests (always — on PRs and on pushes to main)
+  # ---------------------------------------------------------------------------
+  test:
+    name: Run transform tests
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: ${{ env.SOURCE_DIR }}/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r ${{ env.SOURCE_DIR }}/requirements.txt pytest
+
+      - name: Run tests
+        run: pytest ${{ env.SOURCE_DIR }}/tests/ -v
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Submit Dataflow streaming jobs (one per topic, push to main only)
+  # Depends on test passing. Submits jobs asynchronously — they run in Dataflow
+  # without blocking the workflow. Monitor via the GCP Dataflow console.
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Deploy to Dataflow
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: Production
+
+    permissions:
+      contents: 'read'
+
+    strategy:
+      # Deploy all topics in parallel; one failure does not cancel the others.
+      fail-fast: false
+      matrix:
+        include:
+          - topic: clickstream-topic
+            table: clickstream_raw
+          - topic: customer-support-topic
+            table: customer_support_raw
+          - topic: product-catalog
+            table: product_catalog_raw
+          - topic: sales-transactions
+            table: sales_transactions_raw
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: ${{ env.SOURCE_DIR }}/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r ${{ env.SOURCE_DIR }}/requirements.txt
+
+      - name: Authenticate to GCP
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Submit Dataflow job — ${{ matrix.topic }}
+        run: |
+          cd ${{ env.SOURCE_DIR }}
+          python pipeline.py \
+            --runner=DataflowRunner \
+            --project=${{ env.GCP_PROJECT }} \
+            --region=${{ env.REGION }} \
+            --topic=projects/${{ env.GCP_PROJECT }}/topics/${{ matrix.topic }} \
+            --bq_dataset=${{ env.BQ_DATASET }} \
+            --bq_table=${{ matrix.table }} \
+            --temp_location=gs://${{ env.DATAFLOW_BUCKET }}/temp \
+            --staging_location=gs://${{ env.DATAFLOW_BUCKET }}/staging \
+            --job_name=shopstream-${{ matrix.table }}-${{ github.run_number }} \
+            --service_account_email=${{ env.SERVICE_ACCOUNT }} \
+            --no_use_public_ips
