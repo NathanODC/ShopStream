@@ -1,0 +1,43 @@
+name: dbt — Local validation
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "airflow/dbt/**"
+      - ".github/workflows/dbt_test.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "airflow/dbt/**"
+      - ".github/workflows/dbt_test.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: airflow/dbt/requirements.txt
+
+      - name: Install dbt and adapters
+        run: pip install -r airflow/dbt/requirements.txt
+
+      - name: Parse project
+        working-directory: airflow/dbt
+        run: dbt parse --target duckdb
+
+      - name: Build local fixtures
+        working-directory: airflow/dbt
+        run: |
+          mkdir -p .local
+          dbt seed --target duckdb
+          dbt snapshot --target duckdb
+          dbt build --target duckdb --exclude resource_type:snapshot

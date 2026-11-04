@@ -1,6 +1,0 @@
-config {
-    type: "declaration",
-    database: "shopstream-proj",
-    schema: "shopstream_bronze",
-    name: "product_catalog"
-}

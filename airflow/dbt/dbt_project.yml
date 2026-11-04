@@ -1,0 +1,32 @@
+name: shopstream
+version: 1.0.0
+config-version: 2
+
+profile: shopstream
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+
+clean-targets:
+  - target
+  - dbt_packages
+  - logs
+
+models:
+  shopstream:
+    silver:
+      +schema: shopstream_silver
+      +materialized: table
+      +tags: ["silver"]
+    gold:
+      +schema: shopstream_gold
+      +materialized: table
+      +tags: ["gold"]
+
+seeds:
+  shopstream:
+    +schema: shopstream_bronze
+    +quote_columns: false

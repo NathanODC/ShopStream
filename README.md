@@ -1,94 +1,112 @@
-# ShopStream Case
+# ShopStream
 
-### Project Architecture
+ShopStream is a retail data-engineering portfolio project with batch and
+streaming paths. It is local-first for development while retaining managed GCP
+deployment targets.
 
-![alt text](content/ShopStream-Architecture.png)
+## Architecture
 
-### Project Structure
-
-```
-ShopStream/
-├── .github/                  # GitHub workflows (In development)
-├── airflow/                  # Airflow project (In development)
-├── content/                  # Documentation, diagrams, and reference files
-│   ├── ShopStream-Architecture.png
-│   └── ShopStream_Architecture.drawio
-├── definitions/              # Dataform definitions and quality checks
-│   ├── 1_bronze/
-│   ├── 2_silver/
-│   ├── 3_gold/
-│   ├── external_tables/      # BigQuery external tables scripts
-│   └── quality_checks/
-├── shopstream/               # Main source code
-│   ├── 1_api_sources/        # GCF to simulate source ingestion
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   ├── requirements.txt
-│   │   ├── source-data/
-│   │   └── utils.py
-│   ├── 2_pubsub-2-gcs/       # PubSub to GCS pipeline (only for local dev)
-│   │   ├── README.md
-│   │   ├── main.py
-│   │   └── requirements.txt
-│   ├── .python-version
-│   ├── .venv/
-│   ├── pyproject.toml
-│   └── uv.lock
-|
-├── .gitignore
-├── .pre-commit-config.yaml
-├── LICENSE
-├── Makefile
-├── dataform.json
-├── package.json
-├── package-lock.json
-├── shopstream-proj-b2c90a6ef5a1.json
-└── README.md
+```text
+Local source files
+  -> source simulator
+  -> Pub/Sub
+       |-> Pub/Sub-to-GCS -> GCS bronze -> BigQuery external tables
+       |      -> dbt -> BigQuery silver and gold
+       |
+       `-> Apache Beam -> Dataflow -> BigQuery streaming tables
 ```
 
-- `content/`: Contains architecture diagrams and documentation.
-- `definitions/`: Houses Dataform pipeline layer definitions and quality checks.
-- `shopstream/`: Main Python source code, with submodules for API ingestion and PubSub-to-GCS pipeline.
-- Root files: Project configuration, environment, and dependency management.
+The batch path produces authoritative analytical models. The streaming path is
+optimized for low-latency processing. Apache Beam transformations can be tested
+with the local DirectRunner; dbt transformations can be built locally against
+DuckDB without GCP credentials.
 
-### Project Setup
+## Repository layout
 
-#### Prerequisites
+```text
+airflow/
+  dags/                 Airflow orchestration
+  dbt/                  dbt models, tests, snapshots, macros, and local seeds
+definitions/
+  external_tables/      BigQuery DDL for the GCS-backed bronze sources
+shopstream/
+  1_api_sources/        Source simulator function
+  2_pubsub-2-gcs/       Pub/Sub-to-GCS function
+  3_dataflow/           Apache Beam streaming pipeline
+content/                Architecture diagram and draw.io source
+```
 
-- Make:
+## Prerequisites
 
-Ensure make is installed by running `make --version`.
+- `make`
+- `uv`
+- Python 3.12 or newer
+- Docker, for the local GCS emulator and Airflow
+- Google Cloud CLI, for the Pub/Sub emulator and optional GCP deployment
+- Astronomer CLI, for local Airflow
 
-- uv:
+## Local dbt build
 
-Install uv by following the instructions at https://docs.astral.sh/uv/getting-started/installation/
+DuckDB is a local validation target only. BigQuery remains the production
+warehouse target.
 
-After install ensure uv is installed by running `uv --version`.
+```bash
+make dbt_setup
+make dbt_local
+```
 
-- gcloud:
+This command sequence:
 
-Install gcloud by following the instructions at https://cloud.google.com/sdk/docs/install
+1. Loads deterministic Bronze fixtures with `dbt seed`.
+2. Builds the customer Type 2 snapshot.
+3. Builds and tests the Silver and Gold models.
 
-After install ensure gcloud is installed by running `gcloud --version`.
+The local database is written to `airflow/dbt/.local/shopstream.duckdb` and is
+ignored by Git.
 
-#### Local Setup
+To compile for BigQuery using Application Default Credentials:
 
-Install dependencies by running `make setup`.
+```bash
+export GCP_PROJECT_ID=shopstream-proj
+make dbt_compile_bigquery
+```
 
-#### Local Test
+## Local ingestion
 
-Run pubsub emulator by running `make run_pubsub_emulator`.
+Run each long-running command in a separate terminal:
 
-Run gcf source by running `make run_gcf_source`.
+```bash
+make setup
+make run_pubsub_emulator
+make run_gcs_emulator
+make run_gcf_source
+make run_gcf_pubsub_to_gcs
+make source_request
+make pubsub_to_gcs_request
+```
 
-Run gcf pubsub to gcs by running `make run_gcf_pubsub_to_gcs`.
+The files expected by `shopstream/1_api_sources/source-data/` are intentionally
+ignored and must be supplied locally.
 
-Run source request by running `make source_request`.
+## Tests and formatting
 
-Run pubsub to gcs request by running `make pubsub_to_gcs_request`.
+```bash
+make test
+cd shopstream && uv run ruff check .
+cd shopstream && uv run ruff format --check .
+```
 
+The dbt GitHub Actions workflow runs the complete DuckDB build without cloud
+credentials. Dataflow transform tests run in their own workflow.
 
-#### Dev Test
+## Airflow
 
-To be continued...
+```bash
+cd airflow
+astro dev start
+```
 
+The `execute_shopstream` DAG invokes dbt against BigQuery only when
+`SHOPSTREAM_ENV=prod`. The Astro image packages the dbt project at
+`/usr/local/airflow/dbt`; override `DBT_PROJECT_DIR` when a different deployment
+layout is used.

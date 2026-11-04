@@ -215,3 +215,11 @@ shopstream-proj-b2c90a6ef5a1.json
 
 # pubsub emulator logs
 pubsub_log/*
+
+# dbt local state and generated artifacts
+airflow/dbt/.local/
+airflow/dbt/.user.yml
+airflow/dbt/.venv/
+airflow/dbt/dbt_packages/
+airflow/dbt/logs/
+airflow/dbt/target/

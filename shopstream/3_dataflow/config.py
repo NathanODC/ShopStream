@@ -4,7 +4,7 @@ Dataflow pipeline configuration.
 Defines the BigQuery schema used for all topics and a convenience map from
 topic path → default BQ table name.  Because final per-topic schemas are not
 yet defined, every topic writes to a generic table that stores the raw
-payload as a JSON string.  Dataform silver transforms are responsible for
+payload as a JSON string. dbt silver transforms are responsible for
 parsing `payload` into typed columns.
 """
 

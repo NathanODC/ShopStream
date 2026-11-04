@@ -1,7 +1,0 @@
-{
-    "defaultSchema": "shopstream_silver",
-    "assertionSchema": "shopstream_assertions",
-    "warehouse": "bigquery",
-    "defaultDatabase": "shopstream-proj",
-    "defaultLocation": "US"
-}
