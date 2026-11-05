@@ -7,8 +7,8 @@ deployment targets.
 ## Architecture
 
 ```text
-Local source files
-  -> source simulator
+HTTP generation request
+  -> Faker/Pydantic source simulator
   -> Pub/Sub
        |-> Pub/Sub-to-GCS -> GCS bronze -> BigQuery external tables
        |      -> dbt -> BigQuery silver and gold
@@ -45,6 +45,7 @@ content/                Architecture diagram, draw.io source, and design PDF
 - `make`
 - `uv`
 - Python 3.12 or newer
+- Java 21 (OpenJDK), required by the local Pub/Sub emulator
 - Docker, for the local GCS emulator and Airflow
 - Google Cloud CLI, for the Pub/Sub emulator and optional GCP deployment
 - Astronomer CLI, for local Airflow
@@ -89,8 +90,30 @@ make source_request
 make pubsub_to_gcs_request
 ```
 
-The files expected by `shopstream/1_api_sources/source-data/` are intentionally
-ignored and must be supplied locally.
+On Apple Silicon with Homebrew, install Java with `brew install openjdk@21`.
+If `java -version` still resolves to the macOS stub, prepend
+`/opt/homebrew/opt/openjdk@21/bin` to `PATH` before starting the emulator.
+
+The source function generates a coherent synthetic dataset dynamically. It
+publishes all four sources by default, one record per Pub/Sub message. A request
+can select one or more sources while the generator still creates the supporting
+entities needed to preserve relationships.
+
+```json
+{
+  "profile": "small",
+  "seed": 42,
+  "sources": ["clickstream"],
+  "volumes": {"clickstream": 25},
+  "pubsub_topics": {
+    "clickstream": "projects/local-pubsub-instance/topics/clickstream-topic"
+  }
+}
+```
+
+Omit `sources` to publish `clickstream`, `customer_support`, `product_catalog`,
+and `sales_transactions`. Available profiles are `small`, `demo`, `load`, and
+`edge_cases`; explicit `volumes` override individual profile defaults.
 
 ## Tests and formatting
 

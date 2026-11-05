@@ -12,7 +12,7 @@ def callback_factory(topic, data_params, gcs_prefix):
         file_extension = data_params[2]
 
         logging.info(f"[Callback] Received message on {topic}: {message.message_id}")
-        blob_name = f"{gcs_prefix}/{topic.split('/')[-1]}/dt={message.publish_time.strftime('%Y-%m-%d')}/{file_name}_{message.publish_time.strftime('%Y-%m-%d_%H-%M-%S')}.{file_extension}"
+        blob_name = f"{gcs_prefix}/{topic.split('/')[-1]}/dt={message.publish_time.strftime('%Y-%m-%d')}/{file_name}_{message.publish_time.strftime('%Y-%m-%d_%H-%M-%S_%f')}_{message.message_id}.{file_extension}"
         logging.debug(f"[Callback] Constructed blob name: {blob_name}")
         try:
             upload_to_gcs(bucket_name, blob_name, message.data)

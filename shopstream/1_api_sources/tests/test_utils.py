@@ -1,11 +1,11 @@
 """Tests for shopstream/1_api_sources/utils.py"""
+
 import importlib.util
-import json
 import logging
 import os
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from google.api_core.exceptions import NotFound, GoogleAPIError
 
 # Load utils explicitly from its file path to avoid sys.path conflicts
@@ -17,13 +17,12 @@ _spec.loader.exec_module(_utils)
 
 setup_log_execution = _utils.setup_log_execution
 get_or_create_pubsub_topic = _utils.get_or_create_pubsub_topic
-read_local_file = _utils.read_local_file
-convert_json_array_to_ndjson = _utils.convert_json_array_to_ndjson
 
 
 # ---------------------------------------------------------------------------
 # setup_log_execution
 # ---------------------------------------------------------------------------
+
 
 def test_setup_log_execution_sets_correct_level():
     log_levels = {"dev": logging.DEBUG, "stg": logging.INFO, "prd": logging.WARNING}
@@ -38,38 +37,9 @@ def test_setup_log_execution_defaults_to_warning_for_unknown_env():
 
 
 # ---------------------------------------------------------------------------
-# convert_json_array_to_ndjson
-# ---------------------------------------------------------------------------
-
-def test_convert_json_array_to_ndjson_basic():
-    data = json.dumps([{"a": 1}, {"b": 2}]).encode("utf-8")
-    result = convert_json_array_to_ndjson(data)
-    lines = result.decode("utf-8").strip().split("\n")
-    assert len(lines) == 2
-    assert json.loads(lines[0]) == {"a": 1}
-    assert json.loads(lines[1]) == {"b": 2}
-
-
-def test_convert_json_array_to_ndjson_accepts_str():
-    data = json.dumps([{"x": 10}])
-    result = convert_json_array_to_ndjson(data)
-    assert isinstance(result, bytes)
-    assert json.loads(result.decode("utf-8")) == {"x": 10}
-
-
-def test_convert_json_array_to_ndjson_raises_on_invalid_json():
-    with pytest.raises(json.JSONDecodeError):
-        convert_json_array_to_ndjson(b"not valid json")
-
-
-def test_convert_json_array_to_ndjson_raises_on_wrong_type():
-    with pytest.raises(TypeError):
-        convert_json_array_to_ndjson(12345)
-
-
-# ---------------------------------------------------------------------------
 # get_or_create_pubsub_topic — error handling
 # ---------------------------------------------------------------------------
+
 
 def test_get_or_create_pubsub_topic_exists():
     """When topic exists, create_topic should NOT be called."""
@@ -96,23 +66,3 @@ def test_get_or_create_pubsub_topic_propagates_other_errors():
     with pytest.raises(GoogleAPIError):
         get_or_create_pubsub_topic(publisher, "projects/proj/topics/my-topic")
     publisher.create_topic.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
-# read_local_file
-# ---------------------------------------------------------------------------
-
-def test_read_local_file_reads_content(tmp_path, monkeypatch):
-    source_dir = tmp_path / "source-data"
-    source_dir.mkdir()
-    (source_dir / "test.json").write_bytes(b'[{"id": 1}]')
-    monkeypatch.chdir(tmp_path)
-    result = read_local_file("test.json")
-    assert result == b'[{"id": 1}]'
-
-
-def test_read_local_file_raises_on_missing_file(tmp_path, monkeypatch):
-    (tmp_path / "source-data").mkdir()
-    monkeypatch.chdir(tmp_path)
-    with pytest.raises(FileNotFoundError):
-        read_local_file("nonexistent.json")

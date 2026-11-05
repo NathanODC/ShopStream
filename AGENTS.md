@@ -17,8 +17,10 @@ products that those projects consume.
 
 ## Current architecture
 
-The local source simulator reads four ignored sample files and publishes one
-message per source to four Pub/Sub topics:
+The source simulator uses Faker, seeded domain logic, and Pydantic contracts to
+generate a coherent synthetic retail dataset. It publishes one record per
+message to four Pub/Sub topics by default, or only the sources selected in the
+HTTP request:
 
 - clickstream events: JSON -> `clickstream-topic`
 - customer-support tickets: JSON -> `customer-support-topic`
@@ -28,7 +30,7 @@ message per source to four Pub/Sub topics:
 After Pub/Sub, the repository currently contains two separate ingestion paths:
 
 ```text
-Source files
+HTTP generation request
   -> HTTP source-simulator function
   -> Pub/Sub topics
        |-> Batch/raw path: HTTP subscriber function -> GCS bronze buckets
@@ -81,7 +83,7 @@ start
 
 ## Repository map
 
-- `shopstream/1_api_sources/`: HTTP source-simulator function.
+- `shopstream/1_api_sources/`: HTTP synthetic-data generator function.
 - `shopstream/2_pubsub-2-gcs/`: HTTP function that creates pull subscriptions
   and writes messages to topic-specific GCS buckets.
 - `shopstream/3_dataflow/`: Apache Beam streaming pipeline and transform tests.
@@ -157,9 +159,9 @@ Dataflow GitHub Actions workflow.
 
 ## Local-development constraints
 
-- `shopstream/1_api_sources/source-data/` is gitignored and is absent from a
-  clean clone. The source function will not run end-to-end until the four
-  sample files are supplied locally.
+- The source function supports seeded `small`, `demo`, `load`, and `edge_cases`
+  profiles plus per-source volume overrides. Omit `sources` to publish all four;
+  select one or more sources for targeted testing.
 - The local Pub/Sub emulator and fake GCS server are separate processes.
 - `config.local.json` switches the GCS consumer to local Pub/Sub topic paths.
 - The Beam DirectRunner command starts one topic pipeline at a time and is

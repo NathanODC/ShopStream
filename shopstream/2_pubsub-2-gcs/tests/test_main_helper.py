@@ -1,8 +1,8 @@
 """Tests for shopstream/2_pubsub-2-gcs/main_helper.py"""
+
 import importlib.util
 import os
 import sys
-import pytest
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timezone
 
@@ -12,7 +12,9 @@ _pkg_dir = os.path.dirname(os.path.dirname(__file__))
 
 
 def _load_module(name, filename):
-    spec = importlib.util.spec_from_file_location(name, os.path.join(_pkg_dir, filename))
+    spec = importlib.util.spec_from_file_location(
+        name, os.path.join(_pkg_dir, filename)
+    )
     mod = importlib.util.module_from_spec(spec)
     sys.modules[name] = mod
     spec.loader.exec_module(mod)
@@ -79,6 +81,7 @@ def test_callback_blob_name_format():
 
     blob = captured["blob_name"]
     assert blob.startswith("pubsub-data/clickstream-topic/dt=2024-06-15/")
+    assert "msg-1" in blob
     assert blob.endswith(".json")
 
 

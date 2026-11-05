@@ -207,9 +207,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# ignoring sample source files
-shopstream/1_api_sources/source-data/*
-
 # gcp service account
 shopstream-proj-b2c90a6ef5a1.json
 
