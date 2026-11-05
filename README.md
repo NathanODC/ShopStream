@@ -21,6 +21,10 @@ optimized for low-latency processing. Apache Beam transformations can be tested
 with the local DirectRunner; dbt transformations can be built locally against
 DuckDB without GCP credentials.
 
+See the [ShopStream architecture and use-case document](content/ShopStream-Use-Case.pdf)
+for the design decisions, operational boundaries, migration summary, and next
+steps. The editable diagram is in `content/ShopStream_Architecture.drawio`.
+
 ## Repository layout
 
 ```text
@@ -33,7 +37,7 @@ shopstream/
   1_api_sources/        Source simulator function
   2_pubsub-2-gcs/       Pub/Sub-to-GCS function
   3_dataflow/           Apache Beam streaming pipeline
-content/                Architecture diagram and draw.io source
+content/                Architecture diagram, draw.io source, and design PDF
 ```
 
 ## Prerequisites

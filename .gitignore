@@ -223,3 +223,6 @@ airflow/dbt/.venv/
 airflow/dbt/dbt_packages/
 airflow/dbt/logs/
 airflow/dbt/target/
+
+# Node dependencies are not used after the Dataform-to-dbt migration
+node_modules/
