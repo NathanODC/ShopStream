@@ -93,7 +93,8 @@ start
 - `airflow/include/airflow_utils.py`: HTTP function caller used by the DAG.
 - `.github/workflows/`: deployments for both functions and test/deploy for
   Dataflow.
-- `content/`: architecture image and editable draw.io source.
+- `content/`: architecture image, editable draw.io source, and architecture
+  use-case PDF.
 
 ## Verified project identifiers
 
