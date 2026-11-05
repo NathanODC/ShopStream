@@ -100,8 +100,22 @@ cd shopstream && uv run ruff check .
 cd shopstream && uv run ruff format --check .
 ```
 
-The dbt GitHub Actions workflow runs the complete DuckDB build without cloud
-credentials. Dataflow transform tests run in their own workflow.
+Pull requests run the affected function tests, Dataflow transform tests, and
+the complete dbt DuckDB build without cloud credentials. Merging to `main`
+does not deploy to GCP automatically.
+
+Cloud demonstrations are started explicitly from the GitHub Actions **Run
+workflow** menu. Each deployment workflow requires `confirm_deploy`, reruns its
+tests, enters the `Production` environment, and authenticates with short-lived
+GitHub OIDC credentials through Workload Identity Federation. Configure these
+`Production` environment variables before the first demonstration:
+
+- `GCP_WIF_PROVIDER`: full Workload Identity provider resource name.
+- `GCP_SERVICE_ACCOUNT`: deployment service-account email.
+
+The Dataflow demonstration submits one streaming job for each of the four
+topics. Function demonstrations are separate manual workflows so they can be
+shown independently and kept cost-bounded.
 
 ## Airflow
 
