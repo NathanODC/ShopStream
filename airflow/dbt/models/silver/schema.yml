@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: d_customers
+    description: Type 2 customer dimension generated from the customer snapshot.
+    columns:
+      - name: user_id
+        data_tests: [not_null]
+      - name: row_hash
+        data_tests: [not_null]
+
+  - name: d_products
+    description: Latest known product catalog partition.
+    columns:
+      - name: product_id
+        data_tests: [not_null, unique]
+
+  - name: f_sales
+    description: Completed sales flattened to one row per transaction item.
+    columns:
+      - name: transaction_id
+        data_tests: [not_null]
+      - name: user_id
+        data_tests: [not_null]
+      - name: product_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('d_products')
+                field: product_id
+      - name: transaction_timestamp
+        data_tests: [not_null]

@@ -9,6 +9,24 @@ setup:
 test:
 	cd shopstream && .venv/bin/pytest 1_api_sources/tests/ 2_pubsub-2-gcs/tests/ -v
 
+# --- dbt transformations ---
+
+DBT_DIR := airflow/dbt
+DBT_VENV := $(DBT_DIR)/.venv
+
+dbt_setup:
+	uv venv $(DBT_VENV) --python 3.12
+	uv pip install --python $(DBT_VENV)/bin/python -r $(DBT_DIR)/requirements.txt
+
+dbt_local:
+	mkdir -p $(DBT_DIR)/.local
+	cd $(DBT_DIR) && .venv/bin/dbt seed --target duckdb
+	cd $(DBT_DIR) && .venv/bin/dbt snapshot --target duckdb
+	cd $(DBT_DIR) && .venv/bin/dbt build --target duckdb --exclude resource_type:snapshot
+
+dbt_compile_bigquery:
+	cd $(DBT_DIR) && .venv/bin/dbt compile --target bigquery
+
 # --- Local infrastructure emulators ---
 
 run_pubsub_emulator:

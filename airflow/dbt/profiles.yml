@@ -1,0 +1,17 @@
+shopstream:
+  target: "{{ env_var('DBT_TARGET', 'duckdb') }}"
+  outputs:
+    duckdb:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '.local/shopstream.duckdb') }}"
+      schema: shopstream_silver
+      threads: 4
+
+    bigquery:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_ID', 'shopstream-proj') }}"
+      dataset: shopstream_silver
+      location: "{{ env_var('BIGQUERY_LOCATION', 'US') }}"
+      priority: interactive
+      threads: 4

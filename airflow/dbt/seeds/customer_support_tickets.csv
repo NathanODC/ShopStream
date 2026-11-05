@@ -1,0 +1,2 @@
+ticket_id,user_id,created_at,category,priority,status,subject,description,sentiment_score,agent_id,resolution_time_hours,satisfaction_score,dt
+ticket_001,user_001,2026-01-01 12:00:00,delivery,medium,resolved,Delivery question,Package arrived late,-0.2,agent_001,2.5,4,2026-01-01

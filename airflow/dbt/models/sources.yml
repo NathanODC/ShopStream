@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: shopstream_bronze
+    tables:
+      - name: clickstream_events
+      - name: customer_support_tickets
+      - name: product_catalog
+      - name: sales_transactions

@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: user_behavior_summary
+    description: Authoritative customer purchase and browsing summary.
+    columns:
+      - name: user_id
+        data_tests: [not_null, unique]
+      - name: total_orders
+        data_tests: [not_null]
+      - name: total_lifetime_spend
+        data_tests: [not_null]
