@@ -50,7 +50,7 @@ run_gcf_pubsub_to_gcs:
 # --- HTTP trigger shortcuts ---
 
 source_request:
-	curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d '{ "log_env": "dev", "source_bucket_name": "shopstream-source-data-files", "pubsub_topics": { "clickstream": "projects/$(PUBSUB_PROJECT_ID)/topics/clickstream-topic", "customer_support": "projects/$(PUBSUB_PROJECT_ID)/topics/customer-support-topic", "product_catalog": "projects/$(PUBSUB_PROJECT_ID)/topics/product-catalog", "sales_transactions": "projects/$(PUBSUB_PROJECT_ID)/topics/sales-transactions"}}'
+	curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d '{ "log_env": "dev", "profile": "small", "seed": 42, "pubsub_topics": { "clickstream": "projects/$(PUBSUB_PROJECT_ID)/topics/clickstream-topic", "customer_support": "projects/$(PUBSUB_PROJECT_ID)/topics/customer-support-topic", "product_catalog": "projects/$(PUBSUB_PROJECT_ID)/topics/product-catalog", "sales_transactions": "projects/$(PUBSUB_PROJECT_ID)/topics/sales-transactions"}}'
 
 pubsub_to_gcs_request:
 	curl -X POST http://localhost:8081 -H "Content-Type: application/json" -d '{ "log_env": "dev", "gcs_prefix": "pubsub-data", "timeout": 30.0 }'

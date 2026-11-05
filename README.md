@@ -7,8 +7,8 @@ deployment targets.
 ## Architecture
 
 ```text
-Local source files
-  -> source simulator
+HTTP generation request
+  -> Faker/Pydantic source simulator
   -> Pub/Sub
        |-> Pub/Sub-to-GCS -> GCS bronze -> BigQuery external tables
        |      -> dbt -> BigQuery silver and gold
@@ -89,8 +89,26 @@ make source_request
 make pubsub_to_gcs_request
 ```
 
-The files expected by `shopstream/1_api_sources/source-data/` are intentionally
-ignored and must be supplied locally.
+The source function generates a coherent synthetic dataset dynamically. It
+publishes all four sources by default, one record per Pub/Sub message. A request
+can select one or more sources while the generator still creates the supporting
+entities needed to preserve relationships.
+
+```json
+{
+  "profile": "small",
+  "seed": 42,
+  "sources": ["clickstream"],
+  "volumes": {"clickstream": 25},
+  "pubsub_topics": {
+    "clickstream": "projects/local-pubsub-instance/topics/clickstream-topic"
+  }
+}
+```
+
+Omit `sources` to publish `clickstream`, `customer_support`, `product_catalog`,
+and `sales_transactions`. Available profiles are `small`, `demo`, `load`, and
+`edge_cases`; explicit `volumes` override individual profile defaults.
 
 ## Tests and formatting
 

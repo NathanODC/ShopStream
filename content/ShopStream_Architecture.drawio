@@ -100,7 +100,7 @@
             <mxPoint x="-25" y="19.25" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="9SuX9ZwHMjtxl8Abcy5n-55" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" value="Source Systems" vertex="1">
+        <mxCell id="9SuX9ZwHMjtxl8Abcy5n-55" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" value="Synthetic Source Generator" vertex="1">
           <mxGeometry height="30" width="60" x="87" y="138.00000000000003" as="geometry" />
         </mxCell>
         <mxCell id="9SuX9ZwHMjtxl8Abcy5n-58" edge="1" parent="1" source="9SuX9ZwHMjtxl8Abcy5n-54" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.004;entryY=0.545;entryDx=0;entryDy=0;entryPerimeter=0;" target="9SuX9ZwHMjtxl8Abcy5n-5">

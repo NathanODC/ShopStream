@@ -46,7 +46,8 @@ DBT_PROJECT_DIR = Variable.get("DBT_PROJECT_DIR", default_var="/usr/local/airflo
 
 ARG_GCF_SOURCE = {
     "log_env": "dev",
-    "source_bucket_name": "shopstream-source-data-files",
+    "profile": "demo",
+    "seed": 42,
     "pubsub_topics": {
         "clickstream": f"projects/{PUBSUB_PROJECT_ID}/topics/clickstream-topic",
         "customer_support": f"projects/{PUBSUB_PROJECT_ID}/topics/customer-support-topic",

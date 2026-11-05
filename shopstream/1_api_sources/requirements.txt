@@ -1,2 +1,4 @@
 functions-framework==3.*
 google-cloud-pubsub==2.*
+Faker==40.44.0
+pydantic==2.14.3
