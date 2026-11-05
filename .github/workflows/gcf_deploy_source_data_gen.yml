@@ -1,10 +1,23 @@
-name: Build and Deploy to GCF Gen Data Sources
+name: Source function — Test and Deploy
 
 on:
   push:
     branches: [ "main" ]
     paths:
       - "shopstream/1_api_sources/**"
+      - ".github/workflows/gcf_deploy_source_data_gen.yml"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "shopstream/1_api_sources/**"
+      - ".github/workflows/gcf_deploy_source_data_gen.yml"
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: "Deploy the source function to GCP"
+        required: true
+        default: false
+        type: boolean
 
 env:
   FUNCTION_NAME: gcf-shopstream-source-data-gen
@@ -12,13 +25,12 @@ env:
   REGION: us-west1
   PYTHON_VERSION: python313
   ENTRY_POINT: main
-  SERVICE_ACCOUNT: ${{ secrets.GCF_SERVICE_ACCOUNT }}
+  SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
 jobs:
-  setup-build-publish-deploy:
-    name: Setup, Build, Publish, and Deploy
+  test:
+    name: Run source function tests
     runs-on: ubuntu-latest
-    environment: Production
 
     permissions:
       contents: 'read'
@@ -27,10 +39,51 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - id: 'auth'
-      uses: 'google-github-actions/auth@v2'
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+        python-version: "3.13"
+        cache: pip
+        cache-dependency-path: ${{ env.SOURCE_DIR }}/requirements.txt
+
+    - name: Install dependencies
+      run: pip install -r ${{ env.SOURCE_DIR }}/requirements.txt pytest
+
+    - name: Run tests
+      run: pytest ${{ env.SOURCE_DIR }}/tests/ -v
+
+  deploy:
+    name: Deploy source function
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && inputs.confirm_deploy
+    runs-on: ubuntu-latest
+    environment: Production
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Validate cloud deployment configuration
+      env:
+        WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+      run: |
+        if [ -z "$WIF_PROVIDER" ] || [ -z "$SERVICE_ACCOUNT" ]; then
+          echo "Configure GCP_WIF_PROVIDER and GCP_SERVICE_ACCOUNT in the Production environment before deploying." >&2
+          exit 1
+        fi
+
+    - name: Authenticate to GCP
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+        service_account: ${{ env.SERVICE_ACCOUNT }}
+
+    - name: Set up gcloud
+      uses: google-github-actions/setup-gcloud@v2
 
     - name: update gcf source data gen
       run: |-

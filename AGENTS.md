@@ -170,19 +170,19 @@ Dataflow GitHub Actions workflow.
 
 ## CI/CD
 
-- `gcf_deploy_source_data_gen.yml`: deploys the source function on changes to
-  `shopstream/1_api_sources/**`.
-- `gcf_deploy_pubsub_to_gcs.yml`: deploys the GCS consumer on changes to
-  `shopstream/2_pubsub-2-gcs/**`.
+- `gcf_deploy_source_data_gen.yml`: tests source-function changes on pull
+  requests and pushes; deployment is manual and requires confirmation.
+- `gcf_deploy_pubsub_to_gcs.yml`: tests GCS-consumer changes on pull requests
+  and pushes; deployment is manual and requires confirmation.
 - `dataflow_test_and_deploy.yml`: runs Beam transform tests for pull requests
-  and pushes; on a push to `main`, submits one Dataflow job per topic.
+  and pushes; a confirmed manual run submits one Dataflow job per topic.
 - `dbt_test.yml`: parses and builds the entire dbt project against DuckDB with
   deterministic seeds and no cloud credentials.
 
-The workflows authenticate with GitHub secrets. Never commit credentials,
-service-account JSON, source customer data, or `.env` files. Prefer Workload
-Identity Federation over long-lived JSON keys when the deployment design is
-revisited.
+Manual deployments enter the `Production` environment and authenticate through
+GitHub OIDC and Workload Identity Federation using the `GCP_WIF_PROVIDER` and
+`GCP_SERVICE_ACCOUNT` environment variables. Never commit credentials,
+service-account JSON, source customer data, or `.env` files.
 
 ## Engineering rules
 
