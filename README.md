@@ -45,6 +45,7 @@ content/                Architecture diagram, draw.io source, and design PDF
 - `make`
 - `uv`
 - Python 3.12 or newer
+- Java 21 (OpenJDK), required by the local Pub/Sub emulator
 - Docker, for the local GCS emulator and Airflow
 - Google Cloud CLI, for the Pub/Sub emulator and optional GCP deployment
 - Astronomer CLI, for local Airflow
@@ -88,6 +89,10 @@ make run_gcf_pubsub_to_gcs
 make source_request
 make pubsub_to_gcs_request
 ```
+
+On Apple Silicon with Homebrew, install Java with `brew install openjdk@21`.
+If `java -version` still resolves to the macOS stub, prepend
+`/opt/homebrew/opt/openjdk@21/bin` to `PATH` before starting the emulator.
 
 The source function generates a coherent synthetic dataset dynamically. It
 publishes all four sources by default, one record per Pub/Sub message. A request
