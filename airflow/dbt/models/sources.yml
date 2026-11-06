@@ -1,10 +1,16 @@
 version: 2
 
 sources:
-  - name: bronze
+  - name: batch_bronze
     schema: shopstream_bronze
     tables:
-      - name: clickstream_events
       - name: customer_support_tickets
       - name: product_catalog
+
+  - name: streaming_bronze
+    schema: "{% if target.type == 'duckdb' %}shopstream_bronze{% else %}shopstream_streaming{% endif %}"
+    tables:
+      - name: clickstream_events
+        identifier: "{% if target.type == 'duckdb' %}clickstream_events{% else %}clickstream_raw{% endif %}"
       - name: sales_transactions
+        identifier: "{% if target.type == 'duckdb' %}sales_transactions{% else %}sales_transactions_raw{% endif %}"

@@ -1,5 +1,9 @@
-with flattened_transactions as (
-  {{ flatten_sales_transactions(source('bronze', 'sales_transactions')) }}
+with sales_transactions as (
+  {{ normalize_streaming_sales(source('streaming_bronze', 'sales_transactions')) }}
+),
+
+flattened_transactions as (
+  {{ flatten_sales_transactions('sales_transactions') }}
 ),
 
 completed_sales as (

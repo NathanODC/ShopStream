@@ -52,6 +52,12 @@ run_gcf_pubsub_to_gcs:
 source_request:
 	curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d '{ "log_env": "dev", "profile": "small", "seed": 42, "pubsub_topics": { "clickstream": "projects/$(PUBSUB_PROJECT_ID)/topics/clickstream-topic", "customer_support": "projects/$(PUBSUB_PROJECT_ID)/topics/customer-support-topic", "product_catalog": "projects/$(PUBSUB_PROJECT_ID)/topics/product-catalog", "sales_transactions": "projects/$(PUBSUB_PROJECT_ID)/topics/sales-transactions"}}'
 
+source_request_batch:
+	curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d '{ "log_env": "dev", "profile": "small", "seed": 42, "sources": ["customer_support", "product_catalog"], "pubsub_topics": { "customer_support": "projects/$(PUBSUB_PROJECT_ID)/topics/customer-support-topic", "product_catalog": "projects/$(PUBSUB_PROJECT_ID)/topics/product-catalog"}}'
+
+source_request_streaming:
+	curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d '{ "log_env": "dev", "profile": "small", "seed": 42, "sources": ["clickstream", "sales_transactions"], "pubsub_topics": { "clickstream": "projects/$(PUBSUB_PROJECT_ID)/topics/clickstream-topic", "sales_transactions": "projects/$(PUBSUB_PROJECT_ID)/topics/sales-transactions"}}'
+
 pubsub_to_gcs_request:
 	curl -X POST http://localhost:8081 -H "Content-Type: application/json" -d '{ "log_env": "dev", "gcs_prefix": "pubsub-data", "timeout": 30.0 }'
 
@@ -81,7 +87,7 @@ deploy_dataflow:
 	    --runner=DataflowRunner \
 	    --project=shopstream-proj \
 	    --region=us-west1 \
-	    --topic=projects/shopstream-proj/topics/$(DATAFLOW_TABLE) \
+	    --topic=$(DATAFLOW_TOPIC) \
 	    --bq_dataset=shopstream_streaming \
 	    --bq_table=$(DATAFLOW_TABLE) \
 	    --temp_location=gs://shopstream-dataflow-temp/temp \

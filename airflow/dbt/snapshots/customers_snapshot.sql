@@ -10,7 +10,11 @@
   )
 }}
 
-with ranked_customers as (
+with sales_transactions as (
+  {{ normalize_streaming_sales(source('streaming_bronze', 'sales_transactions')) }}
+),
+
+ranked_customers as (
   select
     user_id,
     billing_country,
@@ -20,7 +24,7 @@ with ranked_customers as (
       partition by user_id
       order by {{ adapter.quote('timestamp') }} desc
     ) as row_number
-  from {{ source('bronze', 'sales_transactions') }}
+  from sales_transactions
   where user_id is not null
     and shipping_address is not null
 )

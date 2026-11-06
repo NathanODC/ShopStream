@@ -10,11 +10,15 @@ with user_purchase_patterns as (
   group by user_id
 ),
 
+clickstream_events as (
+  {{ normalize_streaming_clickstream(source('streaming_bronze', 'clickstream_events')) }}
+),
+
 user_browsing_history as (
   select
     user_id,
     array_agg(distinct {{ clickstream_category('properties') }}) as browsed_categories
-  from {{ source('bronze', 'clickstream_events') }}
+  from clickstream_events
   where event_type = 'page_view'
     and {{ clickstream_category('properties') }} is not null
   group by user_id

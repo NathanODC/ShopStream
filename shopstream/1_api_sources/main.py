@@ -1,5 +1,3 @@
-import csv
-import io
 import json
 import logging
 
@@ -18,15 +16,7 @@ LOG_LEVELS = {"dev": logging.DEBUG, "stg": logging.INFO, "prd": logging.WARNING}
 
 def _serialize(source: SourceName, record) -> bytes:
     data = record.model_dump(mode="json")
-    if source != SourceName.sales_transactions:
-        return json.dumps(data, separators=(",", ":")).encode("utf-8")
-
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=list(data))
-    writer.writeheader()
-    data["items"] = json.dumps(data["items"], separators=(",", ":"))
-    writer.writerow(data)
-    return output.getvalue().encode("utf-8")
+    return json.dumps(data, separators=(",", ":")).encode("utf-8")
 
 
 @functions_framework.http

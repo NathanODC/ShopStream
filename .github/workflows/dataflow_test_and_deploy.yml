@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm_deploy:
-        description: "Run the four Dataflow streaming deployments in GCP"
+        description: "Run the clickstream and sales Dataflow deployments in GCP"
         required: true
         default: false
         type: boolean
@@ -74,16 +74,12 @@ jobs:
       id-token: 'write'
 
     strategy:
-      # Deploy all topics in parallel; one failure does not cancel the others.
+      # Deploy streaming topics in parallel; one failure does not cancel the other.
       fail-fast: false
       matrix:
         include:
           - topic: clickstream-topic
             table: clickstream_raw
-          - topic: customer-support-topic
-            table: customer_support_raw
-          - topic: product-catalog
-            table: product_catalog_raw
           - topic: sales-transactions
             table: sales_transactions_raw
 

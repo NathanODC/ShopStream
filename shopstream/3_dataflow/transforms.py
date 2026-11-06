@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 # ParseMessage
 # ---------------------------------------------------------------------------
 
+
 class _ParseMessageFn(beam.DoFn):
     """
     Parses raw Pub/Sub message bytes into a plain Python dict.
@@ -48,6 +49,7 @@ class _ParseMessageFn(beam.DoFn):
             text = message.data.decode("utf-8")
         except UnicodeDecodeError:
             import base64
+
             text = base64.b64encode(message.data).decode("ascii")
             payload = json.dumps({"raw_b64": text})
         else:
@@ -75,6 +77,7 @@ class ParseMessage(beam.PTransform):
 # AddMetadata
 # ---------------------------------------------------------------------------
 
+
 class _AddMetadataFn(beam.DoFn):
     """
     Adds Pub/Sub envelope fields and a server-side ingestion timestamp.
@@ -96,13 +99,13 @@ class _AddMetadataFn(beam.DoFn):
         attributes = msg.attributes if msg.attributes else {}
 
         yield {
-            "message_id":     msg.message_id,
-            "publish_time":   publish_time.strftime("%Y-%m-%d %H:%M:%S.%f UTC"),
-            "source_topic":   self._source_topic,
+            "message_id": msg.message_id,
+            "publish_time": publish_time.strftime("%Y-%m-%d %H:%M:%S.%f UTC"),
+            "source_topic": self._source_topic,
             "ingestion_time": datetime.now(tz=timezone.utc).strftime(
                 "%Y-%m-%d %H:%M:%S.%f UTC"
             ),
-            "payload":    element["payload"],
+            "payload": element["payload"],
             "attributes": json.dumps(dict(attributes)) if attributes else None,
         }
 

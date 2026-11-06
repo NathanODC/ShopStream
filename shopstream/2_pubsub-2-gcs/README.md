@@ -1,1 +1,6 @@
-## This folder script is only in the local dev environment seeing that we cand send automatically the data received from pubsub to GCS bucket
+This function is the batch ingestion path for customer-support tickets and the
+product catalog. Clickstream and sales transactions are handled by Dataflow.
+
+Create the subscriptions by starting this consumer before publishing batch
+messages; Pub/Sub does not deliver messages published before a subscription
+exists.
