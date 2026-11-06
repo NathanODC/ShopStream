@@ -25,9 +25,8 @@ Usage — Dataflow (GCP):
         --temp_location=gs://shopstream-dataflow-temp/temp \\
         --staging_location=gs://shopstream-dataflow-temp/staging
 
-One pipeline instance should be launched per topic.  Use --bq_table to set a
-topic-specific destination table; the default is derived from TOPIC_TABLE_MAP
-in config.py.
+One pipeline instance should be launched for each streaming topic: clickstream
+and sales transactions. Batch topics are handled by the Pub/Sub-to-GCS path.
 """
 
 import argparse
@@ -54,8 +53,11 @@ logger = logging.getLogger(__name__)
 # CLI argument parsing
 # ---------------------------------------------------------------------------
 
+
 def _parse_args(argv=None):
-    parser = argparse.ArgumentParser(description="ShopStream Dataflow streaming pipeline")
+    parser = argparse.ArgumentParser(
+        description="ShopStream Dataflow streaming pipeline"
+    )
 
     parser.add_argument(
         "--topic",
@@ -90,6 +92,7 @@ def _parse_args(argv=None):
 # Pipeline construction
 # ---------------------------------------------------------------------------
 
+
 def build_pipeline(topic: str, bq_destination: str, pipeline_options: PipelineOptions):
     """
     Constructs and returns the Beam pipeline object.
@@ -101,13 +104,15 @@ def build_pipeline(topic: str, bq_destination: str, pipeline_options: PipelineOp
 
     (
         p
-        | "ReadFromPubSub" >> ReadFromPubSub(
+        | "ReadFromPubSub"
+        >> ReadFromPubSub(
             topic=topic,
-            with_attributes=True,   # gives us message_id, publish_time, attributes
+            with_attributes=True,  # gives us message_id, publish_time, attributes
         )
-        | "ParseMessage"  >> ParseMessage()
-        | "AddMetadata"   >> AddMetadata(source_topic=topic)
-        | "WriteToBigQuery" >> WriteToBigQuery(
+        | "ParseMessage" >> ParseMessage()
+        | "AddMetadata" >> AddMetadata(source_topic=topic)
+        | "WriteToBigQuery"
+        >> WriteToBigQuery(
             table=bq_destination,
             schema=BQ_SCHEMA,
             write_disposition=BigQueryDisposition.WRITE_APPEND,
@@ -125,11 +130,14 @@ def build_pipeline(topic: str, bq_destination: str, pipeline_options: PipelineOp
 # Entry point
 # ---------------------------------------------------------------------------
 
+
 def run(argv=None):
     known_args, pipeline_args = _parse_args(argv)
 
     # Resolve BQ table
-    bq_table = known_args.bq_table or TOPIC_TABLE_MAP.get(known_args.topic, "streaming_raw")
+    bq_table = known_args.bq_table or TOPIC_TABLE_MAP.get(
+        known_args.topic, "streaming_raw"
+    )
     bq_destination = f"{known_args.bq_dataset}.{bq_table}"
     if known_args.project:
         bq_destination = f"{known_args.project}:{bq_destination}"
@@ -155,7 +163,9 @@ def run(argv=None):
         logger.info("DirectRunner: waiting for pipeline to finish (Ctrl-C to stop)…")
         result.wait_until_finish()
     else:
-        logger.info(f"Dataflow job submitted. Monitor at: https://console.cloud.google.com/dataflow")
+        logger.info(
+            "Dataflow job submitted. Monitor at: https://console.cloud.google.com/dataflow"
+        )
 
 
 if __name__ == "__main__":

@@ -1,10 +1,5 @@
 {
     "topic_bucket_map": {
-        "projects/local-pubsub-instance/topics/clickstream-topic": [
-            "shopstream-bronze-events",
-            "clickstream",
-            "json"
-        ],
         "projects/local-pubsub-instance/topics/customer-support-topic": [
             "shopstream-bronze-support",
             "customer-support",
@@ -14,11 +9,6 @@
             "shopstream-bronze-products",
             "product-catalog",
             "json"
-        ],
-        "projects/local-pubsub-instance/topics/sales-transactions": [
-            "shopstream-bronze-sales",
-            "sales-transactions",
-            "csv"
         ]
     }
 }

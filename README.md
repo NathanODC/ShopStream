@@ -10,16 +10,18 @@ deployment targets.
 HTTP generation request
   -> Faker/Pydantic source simulator
   -> Pub/Sub
-       |-> Pub/Sub-to-GCS -> GCS bronze -> BigQuery external tables
-       |      -> dbt -> BigQuery silver and gold
+       |-> customer support + product catalog
+       |      -> Pub/Sub-to-GCS -> GCS bronze -> BigQuery external tables
        |
-       `-> Apache Beam -> Dataflow -> BigQuery streaming tables
+       `-> clickstream + sales transactions
+              -> Apache Beam -> Dataflow -> BigQuery streaming tables
+
+Airflow -> dbt snapshots, silver models, gold models, and tests
 ```
 
-The batch path produces authoritative analytical models. The streaming path is
-optimized for low-latency processing. Apache Beam transformations can be tested
-with the local DirectRunner; dbt transformations can be built locally against
-DuckDB without GCP credentials.
+dbt combines the batch product data with the streaming clickstream and sales
+tables. Customer support remains available as a batch bronze source. Dataflow
+jobs run continuously and are deployed independently from Airflow.
 
 See the [ShopStream architecture and use-case document](content/ShopStream-Use-Case.pdf)
 for the design decisions, operational boundaries, migration summary, and next
@@ -86,16 +88,18 @@ make run_pubsub_emulator
 make run_gcs_emulator
 make run_gcf_source
 make run_gcf_pubsub_to_gcs
-make source_request
 make pubsub_to_gcs_request
+make source_request_batch
+make source_request_streaming
 ```
 
 On Apple Silicon with Homebrew, install Java with `brew install openjdk@21`.
 If `java -version` still resolves to the macOS stub, prepend
 `/opt/homebrew/opt/openjdk@21/bin` to `PATH` before starting the emulator.
 
-The source function generates a coherent synthetic dataset dynamically. It
-publishes all four sources by default, one record per Pub/Sub message. A request
+Start the batch consumer before publishing batch records so its durable
+subscriptions exist. The source function generates a coherent synthetic dataset
+dynamically. It publishes all four sources by default, one record per Pub/Sub message. A request
 can select one or more sources while the generator still creates the supporting
 entities needed to preserve relationships.
 
@@ -136,8 +140,8 @@ GitHub OIDC credentials through Workload Identity Federation. Configure these
 - `GCP_WIF_PROVIDER`: full Workload Identity provider resource name.
 - `GCP_SERVICE_ACCOUNT`: deployment service-account email.
 
-The Dataflow demonstration submits one streaming job for each of the four
-topics. Function demonstrations are separate manual workflows so they can be
+The Dataflow demonstration submits two continuous streaming jobs: clickstream
+and sales transactions. Function demonstrations are separate manual workflows so they can be
 shown independently and kept cost-bounded.
 
 ## Airflow
@@ -147,7 +151,8 @@ cd airflow
 astro dev start
 ```
 
-The `execute_shopstream` DAG invokes dbt against BigQuery only when
-`SHOPSTREAM_ENV=prod`. The Astro image packages the dbt project at
+The `shopstream_dbt_transform` DAG orchestrates only bounded dbt work; it does
+not invoke ingestion functions or manage Dataflow jobs. It runs against BigQuery
+only when `SHOPSTREAM_ENV=prod`. The Astro image packages the dbt project at
 `/usr/local/airflow/dbt`; override `DBT_PROJECT_DIR` when a different deployment
 layout is used.

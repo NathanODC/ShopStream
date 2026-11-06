@@ -25,42 +25,39 @@ HTTP request:
 - clickstream events: JSON -> `clickstream-topic`
 - customer-support tickets: JSON -> `customer-support-topic`
 - product catalog: JSON -> `product-catalog`
-- sales transactions: CSV -> `sales-transactions`
+- sales transactions: JSON -> `sales-transactions`
 
-After Pub/Sub, the repository currently contains two separate ingestion paths:
+After Pub/Sub, sources are assigned to separate ingestion paths:
 
 ```text
 HTTP generation request
   -> HTTP source-simulator function
   -> Pub/Sub topics
-       |-> Batch/raw path: HTTP subscriber function -> GCS bronze buckets
+       |-> customer support + product catalog
+       |     -> Batch/raw path: HTTP subscriber function -> GCS bronze buckets
        |     -> BigQuery external tables (`shopstream_bronze`)
        |     -> dbt silver (`shopstream_silver`)
        |     -> dbt gold (`shopstream_gold`)
        |
-       `-> Streaming path: one Beam/Dataflow job per topic
+       `-> clickstream + sales transactions
+             -> Streaming path: one Beam/Dataflow job per topic
              -> generic raw-envelope tables in `shopstream_streaming`
 ```
 
-These paths are not yet unified. dbt currently reads the GCS-backed
-external tables, not the `shopstream_streaming` tables. Airflow orchestrates
-the batch/raw GCS path and dbt only; it does not start or monitor the
-long-running Dataflow jobs.
+dbt reads product data from the GCS-backed external tables and clickstream and
+sales data from `shopstream_streaming`. Airflow orchestrates dbt only; it does
+not invoke ingestion functions or start or monitor long-running Dataflow jobs.
 
 ### Batch orchestration
 
-`airflow/dags/batch_pipeline.py` defines `execute_shopstream`:
+`airflow/dags/batch_pipeline.py` defines `shopstream_dbt_transform`:
 
 ```text
 start
-  -> ingestion_to_raw
-       -> source simulator
-       -> Pub/Sub-to-GCS subscriber
-  -> transform_to_trusted
-       -> environment gate
-       -> dbt snapshot
-       -> dbt silver build
-       -> dbt gold build
+  -> environment gate
+  -> dbt snapshot
+  -> dbt silver build
+  -> dbt gold build
   -> end
 ```
 
@@ -72,13 +69,13 @@ start
 
 ### Data layers
 
-- Bronze: four BigQuery external tables over Hive-style GCS paths such as
-  `pubsub-data/<topic>/dt=YYYY-MM-DD/...`.
+- Batch bronze: two BigQuery external tables for customer support and product
+  catalog over Hive-style GCS paths.
 - Silver: `d_customers`, `d_products`, and `f_sales` in
   `shopstream_silver`.
 - Gold: `shopstream_gold.user_behavior_summary`.
 - Data quality: dbt generic tests stored with each model layer.
-- Streaming raw: four generic BigQuery tables containing message metadata,
+- Streaming raw: two generic BigQuery tables for clickstream and sales containing message metadata,
   the raw payload as a JSON string, and serialized Pub/Sub attributes.
 
 ## Repository map
@@ -92,7 +89,6 @@ start
 - `airflow/dbt/`: dbt models, snapshots, tests, cross-adapter macros, and
   deterministic DuckDB fixtures.
 - `airflow/dags/batch_pipeline.py`: batch orchestration DAG.
-- `airflow/include/airflow_utils.py`: HTTP function caller used by the DAG.
 - `.github/workflows/`: deployments for both functions and test/deploy for
   Dataflow.
 - `content/`: architecture image, editable draw.io source, and architecture
@@ -177,7 +173,7 @@ Dataflow GitHub Actions workflow.
 - `gcf_deploy_pubsub_to_gcs.yml`: tests GCS-consumer changes on pull requests
   and pushes; deployment is manual and requires confirmation.
 - `dataflow_test_and_deploy.yml`: runs Beam transform tests for pull requests
-  and pushes; a confirmed manual run submits one Dataflow job per topic.
+  and pushes; a confirmed manual run submits the clickstream and sales jobs.
 - `dbt_test.yml`: parses and builds the entire dbt project against DuckDB with
   deterministic seeds and no cloud credentials.
 
@@ -212,11 +208,10 @@ service-account JSON, source customer data, or `.env` files.
 
 These are open design items, not assumptions agents should resolve silently:
 
-1. Choose the target relationship between the GCS batch path and the Dataflow
-   streaming path: coexist as Lambda-style serving paths, converge on one raw
-   source of truth, or retire one path.
-2. Define typed, versioned contracts for all four topics. The streaming path
+1. Define typed, versioned contracts for all four topics. The streaming path
    currently stores a generic raw envelope.
+2. Document replay and backfill semantics across the GCS batch and BigQuery
+   streaming bronze stores.
 3. Decide whether bronze should be GCS-first, BigQuery-native, or both, and
    document replay/backfill semantics.
 4. Bring the external-table DDL into a repeatable deployment mechanism; the
@@ -233,9 +228,6 @@ These are open design items, not assumptions agents should resolve silently:
    representative production-shaped data, not only local fixtures.
 10. Replace credential-JSON CI authentication with short-lived federation and
     standardize GCP regions where practical.
-11. Define authenticated production calls from Airflow to the private Cloud
-    Run function endpoints; the current helper sends a plain HTTP POST without
-    an identity token.
 
 ## Definition of done for architecture work
 

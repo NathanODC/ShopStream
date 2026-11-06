@@ -1,6 +1,4 @@
 import importlib.util
-import csv
-import io
 import json
 import os
 import sys
@@ -135,7 +133,7 @@ def test_main_publishes_only_selected_source(monkeypatch):
     assert publisher.publish.call_count == 2
 
 
-def test_sales_messages_include_a_csv_header(monkeypatch):
+def test_sales_messages_are_json_for_streaming(monkeypatch):
     main_module = _load_main()
     publisher = MagicMock()
     publisher.publish.return_value.result.return_value = "message-1"
@@ -149,12 +147,10 @@ def test_sales_messages_include_a_csv_header(monkeypatch):
     with Flask(__name__).app_context():
         _, status = main_module.main.__wrapped__(request)
 
-    payload = publisher.publish.call_args.args[1].decode("utf-8")
-    rows = list(csv.DictReader(io.StringIO(payload)))
+    payload = json.loads(publisher.publish.call_args.args[1].decode("utf-8"))
     assert status == 200
-    assert len(rows) == 1
-    assert rows[0]["transaction_id"].startswith("txn_")
-    assert json.loads(rows[0]["items"])
+    assert payload["transaction_id"].startswith("txn_")
+    assert payload["items"]
 
 
 def test_main_rejects_empty_source_selection():

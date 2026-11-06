@@ -81,3 +81,16 @@ def test_dag_retries(dag_id, dag, fileloc):
     assert (
         dag.default_args.get("retries", None) >= 2
     ), f"{dag_id} in {fileloc} must have task retries >= 2."
+
+
+def test_shopstream_dag_only_orchestrates_dbt():
+    dag = DagBag(include_examples=False).get_dag("shopstream_dbt_transform")
+    assert dag is not None
+    assert set(dag.task_ids) == {
+        "start",
+        "is_prod_env",
+        "dbt_snapshot",
+        "dbt_build_silver",
+        "dbt_build_gold",
+        "end",
+    }

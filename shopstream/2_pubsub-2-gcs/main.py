@@ -5,6 +5,7 @@ import os
 from concurrent.futures import TimeoutError
 from google.api_core.exceptions import NotFound
 from google.cloud import pubsub_v1
+from flask import jsonify
 
 from main_helper import callback_factory
 from utils import setup_log_execution
@@ -69,3 +70,5 @@ def main(request):
         for future in streaming_pull_futures:
             future.cancel()
         logging.info("All streaming pulls cancelled. Exiting.")
+
+    return jsonify({"status": "completed", "topics": list(TOPIC_BUCKET_MAP)}), 200

@@ -1,6 +1,6 @@
 with latest_partition as (
   select max(dt) as dt
-  from {{ source('bronze', 'product_catalog') }}
+  from {{ source('batch_bronze', 'product_catalog') }}
 ),
 
 final as (
@@ -15,7 +15,7 @@ final as (
     attributes,
     last_updated,
     tags
-  from {{ source('bronze', 'product_catalog') }}
+  from {{ source('batch_bronze', 'product_catalog') }}
   where dt = (select dt from latest_partition)
 )
 

@@ -1,4 +1,5 @@
 """Tests for shopstream/2_pubsub-2-gcs/main.py — load_topic_bucket_map and error handling."""
+
 import importlib.util
 import json
 import os
@@ -12,7 +13,9 @@ _pkg_dir = os.path.dirname(os.path.dirname(__file__))
 
 
 def _load_module(name, filename):
-    spec = importlib.util.spec_from_file_location(name, os.path.join(_pkg_dir, filename))
+    spec = importlib.util.spec_from_file_location(
+        name, os.path.join(_pkg_dir, filename)
+    )
     mod = importlib.util.module_from_spec(spec)
     sys.modules[name] = mod
     spec.loader.exec_module(mod)
@@ -34,6 +37,7 @@ load_topic_bucket_map = _main_mod.load_topic_bucket_map
 # load_topic_bucket_map
 # ---------------------------------------------------------------------------
 
+
 def test_load_topic_bucket_map_returns_dict():
     result = load_topic_bucket_map()
     assert isinstance(result, dict)
@@ -43,13 +47,10 @@ def test_load_topic_bucket_map_returns_dict():
 def test_load_topic_bucket_map_has_expected_topics():
     result = load_topic_bucket_map()
     expected_topics = [
-        "projects/shopstream-proj/topics/clickstream-topic",
         "projects/shopstream-proj/topics/customer-support-topic",
         "projects/shopstream-proj/topics/product-catalog",
-        "projects/shopstream-proj/topics/sales-transactions",
     ]
-    for topic in expected_topics:
-        assert topic in result, f"Missing topic: {topic}"
+    assert sorted(result) == sorted(expected_topics)
 
 
 def test_load_topic_bucket_map_values_have_three_elements():
@@ -86,6 +87,7 @@ def test_load_topic_bucket_map_raises_on_malformed_json(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Subscription creation error handling
 # ---------------------------------------------------------------------------
+
 
 def test_subscription_creation_on_not_found():
     """NotFound triggers create_subscription."""
