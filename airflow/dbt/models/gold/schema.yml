@@ -3,6 +3,16 @@ version: 2
 models:
   - name: user_behavior_summary
     description: Authoritative customer purchase and browsing summary.
+    data_tests:
+      - min_row_count:
+          arguments:
+            min_rows: 1
+      - expression_is_true:
+          arguments:
+            expression: "total_orders >= 1 and total_lifetime_spend > 0"
+      - expression_is_true:
+          arguments:
+            expression: "average_order_value <= total_lifetime_spend"
     columns:
       - name: user_id
         data_tests: [not_null, unique]

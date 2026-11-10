@@ -3,25 +3,68 @@ version: 2
 models:
   - name: d_customers
     description: Type 2 customer dimension generated from the customer snapshot.
+    data_tests:
+      - min_row_count:
+          arguments:
+            min_rows: 1
+      - expression_is_true:
+          arguments:
+            expression: "valid_to is null or valid_to > valid_from"
     columns:
       - name: user_id
         data_tests: [not_null]
       - name: row_hash
         data_tests: [not_null]
+      - name: billing_country
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["US", "BR"]
 
   - name: d_products
     description: Latest known product catalog partition.
+    data_tests:
+      - min_row_count:
+          arguments:
+            min_rows: 1
+      - expression_is_true:
+          arguments:
+            expression: "price > 0 and cost > 0"
+      - expression_is_true:
+          arguments:
+            expression: "stock_quantity >= 0"
     columns:
       - name: product_id
         data_tests: [not_null, unique]
+      - name: category
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["footwear", "apparel", "electronics", "home"]
 
   - name: f_sales
     description: Completed sales flattened to one row per transaction item.
+    data_tests:
+      - min_row_count:
+          arguments:
+            min_rows: 1
+      - expression_is_true:
+          arguments:
+            expression: "quantity between 1 and 10"
+      - expression_is_true:
+          arguments:
+            expression: "price > 0 and total_amount > 0"
     columns:
       - name: transaction_id
         data_tests: [not_null]
       - name: user_id
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('d_customers')
+                field: user_id
       - name: product_id
         data_tests:
           - not_null

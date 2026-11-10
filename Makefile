@@ -21,8 +21,9 @@ dbt_setup:
 dbt_local:
 	mkdir -p $(DBT_DIR)/.local
 	cd $(DBT_DIR) && .venv/bin/dbt seed --target duckdb
-	cd $(DBT_DIR) && .venv/bin/dbt snapshot --target duckdb
-	cd $(DBT_DIR) && .venv/bin/dbt build --target duckdb --exclude resource_type:snapshot
+	cd $(DBT_DIR) && .venv/bin/dbt run-operation mark_local_fixtures_fresh --target duckdb
+	cd $(DBT_DIR) && .venv/bin/dbt source freshness --target duckdb
+	cd $(DBT_DIR) && .venv/bin/dbt build --target duckdb --exclude resource_type:seed
 
 dbt_compile_bigquery:
 	cd $(DBT_DIR) && .venv/bin/dbt compile --target bigquery

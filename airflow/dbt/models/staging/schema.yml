@@ -1,0 +1,91 @@
+version: 2
+
+# Typed views over the streaming raw envelope. Contract values mirror the
+# Pydantic models in shopstream/1_api_sources/generator/models.py.
+# Uniqueness is a warning until the streaming path deduplicates Pub/Sub
+# redeliveries.
+
+models:
+  - name: stg_sales_transactions
+    description: Sales transactions parsed from the streaming raw envelope.
+    data_tests:
+      - expression_is_true:
+          arguments:
+            expression: "amount > 0"
+    columns:
+      - name: message_id
+        data_tests: [not_null]
+      - name: transaction_id
+        data_tests:
+          - not_null
+          - unique:
+              config:
+                severity: warn
+      - name: user_id
+        data_tests: [not_null]
+      - name: timestamp
+        quote: true
+        data_tests: [not_null]
+      - name: currency
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["USD", "BRL"]
+      - name: payment_method
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["card", "pix", "wallet"]
+      - name: status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["completed", "pending", "refunded"]
+      - name: items
+        data_tests: [not_null]
+      - name: billing_country
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["US", "BR"]
+
+  - name: stg_clickstream_events
+    description: Clickstream events parsed from the streaming raw envelope.
+    columns:
+      - name: message_id
+        data_tests: [not_null]
+      - name: event_id
+        data_tests:
+          - not_null
+          - unique:
+              config:
+                severity: warn
+      - name: user_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('d_customers')
+                field: user_id
+              config:
+                severity: warn
+                tags: ["silver"]
+      - name: timestamp
+        quote: true
+        data_tests: [not_null]
+      - name: event_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["page_view", "product_view", "add_to_cart", "purchase"]
+      - name: device_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["mobile", "desktop", "tablet"]
+      - name: country
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["US", "BR"]

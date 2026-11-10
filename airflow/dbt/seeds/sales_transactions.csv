@@ -1,3 +1,3 @@
-transaction_id,user_id,timestamp,amount,currency,payment_method,status,items,shipping_address,billing_country,dt
-txn_001,user_001,2026-01-01 10:00:00,160.00,USD,card,completed,"[{""product_id"":""prod_001"",""quantity"":1,""price"":120.0},{""product_id"":""prod_002"",""quantity"":1,""price"":40.0}]","123 Main Street",US,2026-01-01
-txn_002,user_002,2026-01-01 11:00:00,80.00,USD,card,completed,"[{""product_id"":""prod_002"",""quantity"":2,""price"":40.0}]","456 Oak Avenue",BR,2026-01-01
+message_id,ingestion_time,transaction_id,user_id,timestamp,amount,currency,payment_method,status,items,shipping_address,billing_country,dt
+msg_sales_001,2026-01-01 10:00:05,txn_001,user_001,2026-01-01 10:00:00,160.00,USD,card,completed,"[{""product_id"":""prod_001"",""quantity"":1,""price"":120.0},{""product_id"":""prod_002"",""quantity"":1,""price"":40.0}]","123 Main Street",US,2026-01-01
+msg_sales_002,2026-01-01 11:00:05,txn_002,user_002,2026-01-01 11:00:00,80.00,USD,card,completed,"[{""product_id"":""prod_002"",""quantity"":2,""price"":40.0}]","456 Oak Avenue",BR,2026-01-01

@@ -1,3 +1,3 @@
-event_id,user_id,session_id,timestamp,event_type,page_url,user_agent,ip_address,referrer,device_type,country,properties,dt
-evt_001,user_001,session_001,2026-01-01 09:50:00,page_view,/footwear,test-agent,127.0.0.1,/home,mobile,US,"{""category"":""footwear"",""product_id"":""prod_001""}",2026-01-01
-evt_002,user_002,session_002,2026-01-01 10:45:00,page_view,/apparel,test-agent,127.0.0.2,/search,desktop,BR,"{""category"":""apparel"",""product_id"":""prod_002""}",2026-01-01
+message_id,ingestion_time,event_id,user_id,session_id,timestamp,event_type,page_url,user_agent,ip_address,referrer,device_type,country,properties,dt
+msg_click_001,2026-01-01 09:50:05,evt_001,user_001,session_001,2026-01-01 09:50:00,page_view,/footwear,test-agent,127.0.0.1,/home,mobile,US,"{""category"":""footwear"",""product_id"":""prod_001""}",2026-01-01
+msg_click_002,2026-01-01 10:45:05,evt_002,user_002,session_002,2026-01-01 10:45:00,page_view,/apparel,test-agent,127.0.0.2,/search,desktop,BR,"{""category"":""apparel"",""product_id"":""prod_002""}",2026-01-01

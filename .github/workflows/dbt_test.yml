@@ -39,5 +39,6 @@ jobs:
         run: |
           mkdir -p .local
           dbt seed --target duckdb
-          dbt snapshot --target duckdb
-          dbt build --target duckdb --exclude resource_type:snapshot
+          dbt run-operation mark_local_fixtures_fresh --target duckdb
+          dbt source freshness --target duckdb
+          dbt build --target duckdb --exclude resource_type:seed

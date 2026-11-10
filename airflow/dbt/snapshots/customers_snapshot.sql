@@ -11,7 +11,7 @@
 }}
 
 with sales_transactions as (
-  {{ normalize_streaming_sales(source('streaming_bronze', 'sales_transactions')) }}
+  select * from {{ ref('stg_sales_transactions') }}
 ),
 
 ranked_customers as (
