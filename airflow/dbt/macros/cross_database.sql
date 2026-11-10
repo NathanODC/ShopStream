@@ -46,9 +46,14 @@
 
 {% macro default__normalize_streaming_sales(relation) -%}
   select
+    message_id,
+    ingestion_time,
     json_value(payload, '$.transaction_id') as transaction_id,
     json_value(payload, '$.user_id') as user_id,
     cast(json_value(payload, '$.timestamp') as timestamp) as {{ adapter.quote('timestamp') }},
+    cast(json_value(payload, '$.amount') as {{ dbt.type_float() }}) as amount,
+    json_value(payload, '$.currency') as currency,
+    json_value(payload, '$.payment_method') as payment_method,
     json_value(payload, '$.status') as status,
     json_query(payload, '$.items') as items,
     json_value(payload, '$.shipping_address') as shipping_address,
@@ -58,9 +63,14 @@
 
 {% macro duckdb__normalize_streaming_sales(relation) -%}
   select
+    message_id,
+    ingestion_time,
     transaction_id,
     user_id,
     {{ adapter.quote('timestamp') }},
+    cast(amount as {{ dbt.type_float() }}) as amount,
+    currency,
+    payment_method,
     status,
     items,
     shipping_address,
@@ -74,13 +84,30 @@
 
 {% macro default__normalize_streaming_clickstream(relation) -%}
   select
+    message_id,
+    ingestion_time,
+    json_value(payload, '$.event_id') as event_id,
     json_value(payload, '$.user_id') as user_id,
+    json_value(payload, '$.session_id') as session_id,
+    cast(json_value(payload, '$.timestamp') as timestamp) as {{ adapter.quote('timestamp') }},
     json_value(payload, '$.event_type') as event_type,
+    json_value(payload, '$.device_type') as device_type,
+    json_value(payload, '$.country') as country,
     json_query(payload, '$.properties') as properties
   from {{ relation }}
 {%- endmacro %}
 
 {% macro duckdb__normalize_streaming_clickstream(relation) -%}
-  select user_id, event_type, properties
+  select
+    message_id,
+    ingestion_time,
+    event_id,
+    user_id,
+    session_id,
+    {{ adapter.quote('timestamp') }},
+    event_type,
+    device_type,
+    country,
+    properties
   from {{ relation }}
 {%- endmacro %}

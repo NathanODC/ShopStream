@@ -17,6 +17,10 @@ clean-targets:
 
 models:
   shopstream:
+    staging:
+      +schema: shopstream_staging
+      +materialized: view
+      +tags: ["staging"]
     silver:
       +schema: shopstream_silver
       +materialized: table

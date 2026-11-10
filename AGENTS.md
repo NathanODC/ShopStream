@@ -55,6 +55,8 @@ not invoke ingestion functions or start or monitor long-running Dataflow jobs.
 ```text
 start
   -> environment gate
+  -> dbt source freshness
+  -> dbt staging build (source tests + typed streaming views)
   -> dbt snapshot
   -> dbt silver build
   -> dbt gold build
@@ -65,16 +67,23 @@ start
 - The DAG is paused when first created and allows one active run.
 - `SHOPSTREAM_ENV=local` skips dbt because local Astro has no BigQuery
   connection; `SHOPSTREAM_ENV=prod` enables it.
-- Function URLs and the Pub/Sub project are supplied through Airflow Variables.
+- Build steps use `--indirect-selection cautious`, so each step runs only tests
+  whose parents are already built. Tag a cross-layer test with the stage that
+  should run it (for example `silver`), or it will run only in local/CI builds.
 
 ### Data layers
 
 - Batch bronze: two BigQuery external tables for customer support and product
   catalog over Hive-style GCS paths.
+- Staging: `stg_sales_transactions` and `stg_clickstream_events` views in
+  `shopstream_staging`, parsing the streaming raw envelope into typed columns.
 - Silver: `d_customers`, `d_products`, and `f_sales` in
   `shopstream_silver`.
 - Gold: `shopstream_gold.user_behavior_summary`.
-- Data quality: dbt generic tests stored with each model layer.
+- Data quality: source freshness on load time (`dt`, `ingestion_time`), plus
+  volume, accepted-value, range, referential-integrity, and gold
+  reconciliation tests stored with each layer. Project generic tests live in
+  `airflow/dbt/tests/generic/`; no dbt packages are required.
 - Streaming raw: two generic BigQuery tables for clickstream and sales containing message metadata,
   the raw payload as a JSON string, and serialized Pub/Sub attributes.
 
@@ -174,8 +183,10 @@ Dataflow GitHub Actions workflow.
   and pushes; deployment is manual and requires confirmation.
 - `dataflow_test_and_deploy.yml`: runs Beam transform tests for pull requests
   and pushes; a confirmed manual run submits the clickstream and sales jobs.
-- `dbt_test.yml`: parses and builds the entire dbt project against DuckDB with
-  deterministic seeds and no cloud credentials.
+- `dbt_test.yml`: parses the dbt project, checks source freshness, and builds
+  everything against DuckDB with deterministic seeds and no cloud credentials.
+  `mark_local_fixtures_fresh` moves fixture load times to now first; it refuses
+  to run against BigQuery.
 
 Manual deployments enter the `Production` environment and authenticate through
 GitHub OIDC and Workload Identity Federation using the `GCP_WIF_PROVIDER` and
@@ -216,8 +227,10 @@ These are open design items, not assumptions agents should resolve silently:
    document replay/backfill semantics.
 4. Bring the external-table DDL into a repeatable deployment mechanism; the
    `.sql` files are not currently managed by dbt or infrastructure as code.
-5. Expand data quality beyond the current dbt tests and add
-   freshness, volume, referential-integrity, and accepted-value checks.
+5. Data quality: freshness, volume, accepted-value, referential-integrity,
+   and reconciliation checks exist but are unverified against BigQuery. Still
+   missing: volume anomaly detection (e.g. day-over-day drops), alerting on
+   warnings, and deduplication so uniqueness tests can become errors.
 6. Add infrastructure as code for Pub/Sub, buckets, datasets, service accounts,
    dbt deployment, Dataflow, and orchestration configuration.
 7. Add observability: structured logs, pipeline metrics, alerting, lineage,

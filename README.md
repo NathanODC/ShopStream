@@ -16,7 +16,7 @@ HTTP generation request
        `-> clickstream + sales transactions
               -> Apache Beam -> Dataflow -> BigQuery streaming tables
 
-Airflow -> dbt snapshots, silver models, gold models, and tests
+Airflow -> dbt source freshness, staging, snapshots, silver, gold, and tests
 ```
 
 dbt combines the batch product data with the streaming clickstream and sales
@@ -65,8 +65,24 @@ make dbt_local
 This command sequence:
 
 1. Loads deterministic Bronze fixtures with `dbt seed`.
-2. Builds the customer Type 2 snapshot.
-3. Builds and tests the Silver and Gold models.
+2. Moves the fixture load times to now and checks `dbt source freshness`.
+3. Builds and tests staging, the customer Type 2 snapshot, Silver, and Gold.
+
+## Data quality
+
+- **Freshness:** sources are checked on load time, not event time. Batch
+  sources use the `dt` partition (warn after 7 days, error after 14), and
+  streaming sources use `ingestion_time` (warn after 1 day, error after 7).
+- **Volume:** every source and model must contain at least one row.
+- **Contracts:** accepted-value and range tests mirror the generator's Pydantic
+  models. Streaming payloads are parsed into typed `shopstream_staging` views
+  so they can be tested before the snapshot reads them.
+- **Referential integrity:** sales must reference known customers and
+  products. Clickstream and support users that are not known customers, and
+  completed sale items that the catalog join drops, are reported as warnings.
+- **Reconciliation:** gold order counts and spend must equal `f_sales`.
+- Duplicate `transaction_id` and `event_id` values warn until the streaming
+  path deduplicates Pub/Sub redeliveries.
 
 The local database is written to `airflow/dbt/.local/shopstream.duckdb` and is
 ignored by Git.
@@ -152,7 +168,8 @@ astro dev start
 ```
 
 The `shopstream_dbt_transform` DAG orchestrates only bounded dbt work; it does
-not invoke ingestion functions or manage Dataflow jobs. It runs against BigQuery
+not invoke ingestion functions or manage Dataflow jobs. It checks source
+freshness first and stops before any transformation when a source is stale. It runs against BigQuery
 only when `SHOPSTREAM_ENV=prod`. The Astro image packages the dbt project at
 `/usr/local/airflow/dbt`; override `DBT_PROJECT_DIR` when a different deployment
 layout is used.

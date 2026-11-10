@@ -11,7 +11,7 @@ with user_purchase_patterns as (
 ),
 
 clickstream_events as (
-  {{ normalize_streaming_clickstream(source('streaming_bronze', 'clickstream_events')) }}
+  select * from {{ ref('stg_clickstream_events') }}
 ),
 
 user_browsing_history as (
